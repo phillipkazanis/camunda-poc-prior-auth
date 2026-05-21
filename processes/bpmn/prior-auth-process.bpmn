@@ -53,7 +53,7 @@
           <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
           <zeebe:ioMapping>
             <zeebe:input source="GET" target="method" />
-            <zeebe:input source="=&#34;{{secrets.SUPABASE_URL}}/rest/v1/v_prior_auth_clinical_guidelines?procedure_code=eq.&#34; + fromAi(toolCall.procedureCode, &#34;The procedure code to look up. Must be one of: MRI-LUMBAR, MRI-BRAIN, KNEE-ARTHROSCOPY.&#34;, &#34;string&#34;)" target="url" />
+            <zeebe:input source="=&#34;{{secrets.SUPABASE_URL}}/rest/v1/v_prior_auth_clinical_guidelines?procedure_code_base=eq.&#34; + fromAi(toolCall.procedureCode, &#34;The base procedure code to look up — must be exactly one of: MRI-LUMBAR, MRI-BRAIN, KNEE-ARTHROSCOPY. Strip any MBS item numbers or extra text.&#34;, &#34;string&#34;)" target="url" />
             <zeebe:input source="={&#34;apikey&#34;: &#34;{{secrets.SUPABASE_ANON_KEY}}&#34;, &#34;Authorization&#34;: &#34;Bearer {{secrets.SUPABASE_ANON_KEY}}&#34;, &#34;Accept&#34;: &#34;application/json&#34;}" target="headers" />
             <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
           </zeebe:ioMapping>
