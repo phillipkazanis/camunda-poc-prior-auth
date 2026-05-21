@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="8cca9cf" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
   <bpmn:process id="prior-auth-process" name="Prior Authorisation" isExecutable="true">
-
     <bpmn:startEvent id="StartEvent_1" name="Prior Auth Request Received">
       <bpmn:extensionElements>
         <zeebe:formDefinition formId="prior-auth-start-form" />
       </bpmn:extensionElements>
       <bpmn:outgoing>Flow_ToAgent</bpmn:outgoing>
     </bpmn:startEvent>
-
     <bpmn:adHocSubProcess id="Activity_Agent" name="Prior Auth AI Agent" zeebe:modelerTemplate="io.camunda.connectors.agenticai.aiagent.jobworker.v1" zeebe:modelerTemplateVersion="5">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda.agenticai:aiagent-job-worker:1" retries="0" />
@@ -22,8 +20,8 @@
           <zeebe:input source="=10000" target="provider.bedrock.model.parameters.maxTokens" />
           <zeebe:input source="=0.2" target="provider.bedrock.model.parameters.temperature" />
           <zeebe:input source="=0.1" target="provider.bedrock.model.parameters.topP" />
-          <zeebe:input source="=&quot;You are PriorAuthEvaluationAgent, an AI agent reviewing private health insurance prior authorisation requests for diagnostic imaging and surgical procedures in Australia.&#10;&#10;# CONTEXT&#10;A GP has submitted a prior authorisation request including a structured intake form and a referral letter PDF. The referral letter is in the document store and your first job is to extract structured clinical information from it. You then compare what the referral contains against the procedure-specific clinical guideline stored in the insurer&apos;s guideline reference table. If the referral satisfies the guideline you recommend approve. If a mandatory clinical history field is missing you draft a targeted email to the GP requesting only the specific missing items. If a documented red flag is present you bypass conservative-management requirements and approve. If clinical signals are ambiguous you escalate to a human clinical reviewer.&#10;&#10;# AVAILABLE TOOLS&#10;1. extract_clinical_document — runs IDP on the referral PDF and returns the structured extraction object.&#10;2. check_clinical_guidelines — looks up the documentation requirements for a procedure code from the insurer&apos;s guideline reference table.&#10;3. request_missing_information — emails the referring GP asking them to supply specific missing clinical history items. Use this when one or more mandatory required_clinical_history fields are absent in the extraction.&#10;4. summarise_and_recommend — your final tool. Commits a structured case summary and recommendation back to the process. You MUST call this exactly once at the end.&#10;&#10;# MANDATORY WORKFLOW&#10;1. Call extract_clinical_document with the referral document reference.&#10;2. Call check_clinical_guidelines with the procedureCode returned by extraction (fall back to the form&apos;s procedureCode if extraction did not identify one).&#10;3. For each required_clinical_history entry where is_mandatory is true, check whether the extraction has a non-null value for the matching field_id. Camel-case the field_id when matching (duration_of_symptoms_weeks -&gt; durationOfSymptomsWeeks, etc).&#10;4. Evaluate red flag bypass: if any red_flag_conditions item is documented in extraction.redFlagScreening or the GP&apos;s clinical notes, the guideline is satisfied regardless of missing conservative-management fields. Set recommendation = approve.&#10;5. Evaluate normal path: if all mandatory fields are populated AND minimum_conservative_treatment_weeks is met by the extracted duration evidence, set recommendation = approve.&#10;6. Evaluate request_info path: if mandatory fields are missing AND there are no red flags, call request_missing_information with a list of the specific missing fields (use each missing entry&apos;label and description verbatim from the guideline). Then set recommendation = awaiting_info.&#10;7. Evaluate escalate path: if clinical evidence is contradictory, partially documented in a way you cannot resolve, or you have low confidence, set recommendation = escalate.&#10;8. Always call summarise_and_recommend as your last tool with the final recommendation, a 2-3 paragraph case summary, and your reasoning.&#10;&#10;# CONSTRAINTS&#10;- Never approve a procedure when a mandatory field is missing and no red flag is documented.&#10;- Quote the guideline&apos;s evidence_basis in your case summary.&#10;- Be conservative: if in doubt, escalate rather than approve.&quot;" target="data.systemPrompt.prompt" />
-          <zeebe:input source="=&quot;Prior auth submission | Patient: &quot; + patientName + &quot; (ID &quot; + patientId + &quot;) | DOB: &quot; + dateOfBirth + &quot; | Medicare: &quot; + medicareNumber + &quot; | Cover: &quot; + coverageType + &quot; | Procedure requested (form): &quot; + procedureRequested + &quot; | Procedure code (form): &quot; + procedureCode + &quot; | Urgency: &quot; + urgencyLevel + &quot; | GP: &quot; + gpName + &quot; (&quot; + gpEmail + &quot;) at &quot; + practiceName + &quot; | Diagnosis: &quot; + diagnosis + &quot; | GP clinical notes: &quot; + clinicalNotes + &quot; | Referral document is attached and available to extract_clinical_document. Begin the mandatory workflow now.&quot;" target="data.userPrompt.prompt" />
+          <zeebe:input source="=&#34;You are PriorAuthEvaluationAgent, an AI agent reviewing private health insurance prior authorisation requests for diagnostic imaging and surgical procedures in Australia.&#10;&#10;# CONTEXT&#10;A GP has submitted a prior authorisation request including a structured intake form and a referral letter PDF. The referral letter is in the document store and your first job is to extract structured clinical information from it. You then compare what the referral contains against the procedure-specific clinical guideline stored in the insurer&#39;s guideline reference table. If the referral satisfies the guideline you recommend approve. If a mandatory clinical history field is missing you draft a targeted email to the GP requesting only the specific missing items. If a documented red flag is present you bypass conservative-management requirements and approve. If clinical signals are ambiguous you escalate to a human clinical reviewer.&#10;&#10;# AVAILABLE TOOLS&#10;1. extract_clinical_document — runs IDP on the referral PDF and returns the structured extraction object.&#10;2. check_clinical_guidelines — looks up the documentation requirements for a procedure code from the insurer&#39;s guideline reference table.&#10;3. request_missing_information — emails the referring GP asking them to supply specific missing clinical history items. Use this when one or more mandatory required_clinical_history fields are absent in the extraction.&#10;4. summarise_and_recommend — your final tool. Commits a structured case summary and recommendation back to the process. You MUST call this exactly once at the end.&#10;&#10;# MANDATORY WORKFLOW&#10;1. Call extract_clinical_document with the referral document reference.&#10;2. Call check_clinical_guidelines with the procedureCode returned by extraction (fall back to the form&#39;s procedureCode if extraction did not identify one).&#10;3. For each required_clinical_history entry where is_mandatory is true, check whether the extraction has a non-null value for the matching field_id. Camel-case the field_id when matching (duration_of_symptoms_weeks -&#62; durationOfSymptomsWeeks, etc).&#10;4. Evaluate red flag bypass: if any red_flag_conditions item is documented in extraction.redFlagScreening or the GP&#39;s clinical notes, the guideline is satisfied regardless of missing conservative-management fields. Set recommendation = approve.&#10;5. Evaluate normal path: if all mandatory fields are populated AND minimum_conservative_treatment_weeks is met by the extracted duration evidence, set recommendation = approve.&#10;6. Evaluate request_info path: if mandatory fields are missing AND there are no red flags, call request_missing_information with a list of the specific missing fields (use each missing entry&#39;label and description verbatim from the guideline). Then set recommendation = awaiting_info.&#10;7. Evaluate escalate path: if clinical evidence is contradictory, partially documented in a way you cannot resolve, or you have low confidence, set recommendation = escalate.&#10;8. Always call summarise_and_recommend as your last tool with the final recommendation, a 2-3 paragraph case summary, and your reasoning.&#10;&#10;# CONSTRAINTS&#10;- Never approve a procedure when a mandatory field is missing and no red flag is documented.&#10;- Quote the guideline&#39;s evidence_basis in your case summary.&#10;- Be conservative: if in doubt, escalate rather than approve.&#34;" target="data.systemPrompt.prompt" />
+          <zeebe:input source="=&#34;Prior auth submission | Patient: &#34; + patientName + &#34; (ID &#34; + patientId + &#34;) | DOB: &#34; + dateOfBirth + &#34; | Medicare: &#34; + medicareNumber + &#34; | Cover: &#34; + coverageType + &#34; | Procedure requested (form): &#34; + procedureRequested + &#34; | Procedure code (form): &#34; + procedureCode + &#34; | Urgency: &#34; + urgencyLevel + &#34; | GP: &#34; + gpName + &#34; (&#34; + gpEmail + &#34;) at &#34; + practiceName + &#34; | Diagnosis: &#34; + diagnosis + &#34; | GP clinical notes: &#34; + clinicalNotes + &#34; | Referral document is attached and available to extract_clinical_document. Begin the mandatory workflow now.&#34;" target="data.userPrompt.prompt" />
           <zeebe:input source="=agentContext" target="agentContext" />
           <zeebe:input source="in-process" target="data.memory.storage.type" />
           <zeebe:input source="=40" target="data.memory.contextWindowSize" />
@@ -45,38 +43,22 @@
       <bpmn:incoming>Flow_ToAgent</bpmn:incoming>
       <bpmn:incoming>Flow_GpReplyToAgent</bpmn:incoming>
       <bpmn:outgoing>Flow_FromAgent</bpmn:outgoing>
-
-      <!-- TOOL 1: extract_clinical_document -->
-      <bpmn:callActivity id="Tool_ExtractDocument" name="extract_clinical_document">
-        <bpmn:documentation>Run IDP (AWS Textract + Claude) on the referring GP's referral letter PDF. Returns a single `extraction` object whose keys match the field_id values used by the clinical guidelines table (camelCased): patientFullName, patientDob, medicareNumber, fundMemberNumber, referringGpName, referringGpEmail, procedureRequested, procedureCode, clinicalUrgency, workingDiagnosis, durationOfSymptomsWeeks, physiotherapyHistory, conservativeManagementHistory, neurologicalExamination, painScale, redFlagScreening, headachePatternDurationWeeks, priorImaging, imagingFindings, functionalAssessment, mechanicalSymptoms. Fields not present in the document return null. Call this first.</bpmn:documentation>
-        <bpmn:extensionElements>
-          <zeebe:calledElement processId="analyze-clinical-document" propagateAllChildVariables="false" propagateAllParentVariables="false" />
-          <zeebe:ioMapping>
-            <zeebe:input source="=clinicalDocuments[1]" target="clinicalDocument" />
-            <zeebe:output source="=extraction" target="toolCallResult" />
-          </zeebe:ioMapping>
-        </bpmn:extensionElements>
-      </bpmn:callActivity>
-
-      <!-- TOOL 2: check_clinical_guidelines -->
       <bpmn:serviceTask id="Tool_CheckGuidelines" name="check_clinical_guidelines">
         <bpmn:documentation>Look up the documentation requirements for a procedure from the insurer's clinical guideline reference table. Input: procedureCode (e.g. MRI-LUMBAR, MRI-BRAIN, KNEE-ARTHROSCOPY). Returns the matching guideline row including procedure_name, body_region, required_clinical_history (array of {field_id, label, description, is_mandatory, minimum_value?, unit?, minimum_duration_weeks?}), red_flag_conditions (array of strings), minimum_conservative_treatment_weeks, evidence_basis, approval_criteria, typical_turnaround_days. Returns an empty array if procedureCode is unknown.</bpmn:documentation>
         <bpmn:extensionElements>
           <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
           <zeebe:ioMapping>
             <zeebe:input source="GET" target="method" />
-            <zeebe:input source="=&quot;{{secrets.SUPABASE_URL}}/rest/v1/v_prior_auth_clinical_guidelines?procedure_code=eq.&quot; + fromAi(toolCall.procedureCode, &quot;The procedure code to look up. Must be one of: MRI-LUMBAR, MRI-BRAIN, KNEE-ARTHROSCOPY.&quot;, &quot;string&quot;)" target="url" />
-            <zeebe:input source="={&quot;apikey&quot;: &quot;{{secrets.SUPABASE_ANON_KEY}}&quot;, &quot;Authorization&quot;: &quot;Bearer {{secrets.SUPABASE_ANON_KEY}}&quot;, &quot;Accept&quot;: &quot;application/json&quot;}" target="headers" />
+            <zeebe:input source="=&#34;{{secrets.SUPABASE_URL}}/rest/v1/v_prior_auth_clinical_guidelines?procedure_code=eq.&#34; + fromAi(toolCall.procedureCode, &#34;The procedure code to look up. Must be one of: MRI-LUMBAR, MRI-BRAIN, KNEE-ARTHROSCOPY.&#34;, &#34;string&#34;)" target="url" />
+            <zeebe:input source="={&#34;apikey&#34;: &#34;{{secrets.SUPABASE_ANON_KEY}}&#34;, &#34;Authorization&#34;: &#34;Bearer {{secrets.SUPABASE_ANON_KEY}}&#34;, &#34;Accept&#34;: &#34;application/json&#34;}" target="headers" />
             <zeebe:input source="=20" target="connectionTimeoutInSeconds" />
           </zeebe:ioMapping>
           <zeebe:taskHeaders>
-            <zeebe:header key="resultExpression" value="={toolCallResult: if count(response.body) &gt; 0 then response.body[1] else {error: &quot;no guideline found for procedure_code&quot;, procedureCode: response.body}}" />
+            <zeebe:header key="resultExpression" value="={toolCallResult: if count(response.body) &#62; 0 then response.body[1] else {error: &#34;no guideline found for procedure_code&#34;, procedureCode: response.body}}" />
             <zeebe:header key="retryBackoff" value="PT0S" />
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
       </bpmn:serviceTask>
-
-      <!-- TOOL 3: request_missing_information -->
       <bpmn:serviceTask id="Tool_RequestMissingInfo" name="request_missing_information">
         <bpmn:documentation>Send an email to the referring GP requesting specific missing clinical history items needed to assess the prior auth. Use this only when the guideline lookup identifies mandatory required_clinical_history fields that are missing from the extraction AND no red flag is documented. Provide a clear, itemised list of exactly what is missing — quote each missing field's label and description from the guideline so the GP knows what to attach. After calling this tool you must call summarise_and_recommend with recommendation = awaiting_info. The tool returns the messageId the process can correlate the GP's reply.</bpmn:documentation>
         <bpmn:extensionElements>
@@ -84,22 +66,20 @@
           <zeebe:ioMapping>
             <zeebe:input source="POST" target="method" />
             <zeebe:input source="https://api.resend.com/emails" target="url" />
-            <zeebe:input source="={&quot;Authorization&quot;: &quot;Bearer {{secrets.RESEND_API_KEY}}&quot;, &quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
-            <zeebe:input source="=&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;" target="body.from" />
-            <zeebe:input source="=[fromAi(toolCall.gpEmail, &quot;The referring GP&apos;s email address (use extraction.referringGpEmail or the form gpEmail).&quot;, &quot;string&quot;)]" target="body.to" />
-            <zeebe:input source="=&quot;ACTION REQUIRED — Additional clinical documentation needed: &quot; + fromAi(toolCall.patientName, &quot;Patient full name.&quot;, &quot;string&quot;) + &quot; (Ref &quot; + fromAi(toolCall.referralReference, &quot;Referral reference number from the document, or patient ID if absent.&quot;, &quot;string&quot;) + &quot;)&quot;" target="body.subject" />
-            <zeebe:input source="=&quot;Dear &quot; + fromAi(toolCall.gpName, &quot;Referring GP&apos;s full name including title.&quot;, &quot;string&quot;) + &quot;,\n\nThank you for submitting a prior authorisation request for &quot; + fromAi(toolCall.patientName, &quot;Patient name.&quot;, &quot;string&quot;) + &quot; (&quot; + fromAi(toolCall.procedureRequested, &quot;Procedure name being requested.&quot;, &quot;string&quot;) + &quot;).\n\nBefore we can complete our assessment we need the following clinical documentation, which the relevant guideline requires for this procedure:\n\n&quot; + fromAi(toolCall.missingItemsBulletList, &quot;A markdown-style bullet list of exactly the missing clinical history items. Each bullet should contain the human-readable label followed by the description from the guideline. Do not include items that were already provided.&quot;, &quot;string&quot;) + &quot;\n\nPlease reply to this email with the requested information (attached referral addendum or amended letter is preferred). The prior authorisation will continue automatically once your reply is received.\n\nKind regards,\nPrior Authorisation Team&quot;" target="body.text" />
-            <zeebe:input source="={&quot;X-PriorAuth-PatientId&quot;: fromAi(toolCall.patientId, &quot;Patient ID for reply correlation.&quot;, &quot;string&quot;)}" target="body.headers" />
+            <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
+            <zeebe:input source="=&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;" target="body.from" />
+            <zeebe:input source="=[fromAi(toolCall.gpEmail, &#34;The referring GP&#39;s email address (use extraction.referringGpEmail or the form gpEmail).&#34;, &#34;string&#34;)]" target="body.to" />
+            <zeebe:input source="=&#34;ACTION REQUIRED — Additional clinical documentation needed: &#34; + fromAi(toolCall.patientName, &#34;Patient full name.&#34;, &#34;string&#34;) + &#34; (Ref &#34; + fromAi(toolCall.referralReference, &#34;Referral reference number from the document, or patient ID if absent.&#34;, &#34;string&#34;) + &#34;)&#34;" target="body.subject" />
+            <zeebe:input source="=&#34;Dear &#34; + fromAi(toolCall.gpName, &#34;Referring GP&#39;s full name including title.&#34;, &#34;string&#34;) + &#34;,\n\nThank you for submitting a prior authorisation request for &#34; + fromAi(toolCall.patientName, &#34;Patient name.&#34;, &#34;string&#34;) + &#34; (&#34; + fromAi(toolCall.procedureRequested, &#34;Procedure name being requested.&#34;, &#34;string&#34;) + &#34;).\n\nBefore we can complete our assessment we need the following clinical documentation, which the relevant guideline requires for this procedure:\n\n&#34; + fromAi(toolCall.missingItemsBulletList, &#34;A markdown-style bullet list of exactly the missing clinical history items. Each bullet should contain the human-readable label followed by the description from the guideline. Do not include items that were already provided.&#34;, &#34;string&#34;) + &#34;\n\nPlease reply to this email with the requested information (attached referral addendum or amended letter is preferred). The prior authorisation will continue automatically once your reply is received.\n\nKind regards,\nPrior Authorisation Team&#34;" target="body.text" />
+            <zeebe:input source="={&#34;X-PriorAuth-PatientId&#34;: fromAi(toolCall.patientId, &#34;Patient ID for reply correlation.&#34;, &#34;string&#34;)}" target="body.headers" />
             <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
           </zeebe:ioMapping>
           <zeebe:taskHeaders>
-            <zeebe:header key="resultExpression" value="={toolCallResult: {status: &quot;email_sent&quot;, messageId: response.body.id, sentTo: response.body.to, sentAt: now()}}" />
+            <zeebe:header key="resultExpression" value="={toolCallResult: {status: &#34;email_sent&#34;, messageId: response.body.id, sentTo: response.body.to, sentAt: now()}}" />
             <zeebe:header key="retryBackoff" value="PT0S" />
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
       </bpmn:serviceTask>
-
-      <!-- TOOL 4: summarise_and_recommend -->
       <bpmn:serviceTask id="Tool_Summarise" name="summarise_and_recommend">
         <bpmn:documentation>Final tool. Commits the agent's case summary and recommendation back to the process. You MUST call this exactly once as your last action. Parameters: recommendation (one of: approve, reject, escalate, awaiting_info), caseSummary (2-3 paragraph clinical case summary citing the guideline's evidence_basis), reasoning (short structured rationale referencing which required_clinical_history fields were satisfied or missing, any red flag found, and the resulting decision). Returns the same payload back as confirmation. After this tool, your task is complete.</bpmn:documentation>
         <bpmn:extensionElements>
@@ -113,8 +93,8 @@
             <zeebe:input source="us.anthropic.claude-sonnet-4-20250514-v1:0" target="provider.bedrock.model.model" />
             <zeebe:input source="=4000" target="provider.bedrock.model.parameters.maxTokens" />
             <zeebe:input source="=0.1" target="provider.bedrock.model.parameters.temperature" />
-            <zeebe:input source="=&quot;You are a clinical case summariser. You receive a recommendation and reasoning from a prior auth review agent. Polish the case summary into a clear, evidence-based 2-3 paragraph narrative that a human reviewer or downstream notification system can read. Do not change the recommendation or invent new clinical findings. Return your output as strict JSON with keys: recommendation, caseSummary, reasoning.&quot;" target="data.systemPrompt.prompt" />
-            <zeebe:input source="=&quot;Recommendation: &quot; + fromAi(toolCall.recommendation, &quot;The final recommendation. Must be one of: approve, reject, escalate, awaiting_info.&quot;, &quot;string&quot;) + &quot; | Draft case summary: &quot; + fromAi(toolCall.caseSummary, &quot;2-3 paragraph clinical case summary citing the guideline evidence basis.&quot;, &quot;string&quot;) + &quot; | Reasoning: &quot; + fromAi(toolCall.reasoning, &quot;Structured rationale: which required_clinical_history fields were satisfied or missing, any red flag found, and the resulting decision.&quot;, &quot;string&quot;)" target="data.userPrompt.prompt" />
+            <zeebe:input source="=&#34;You are a clinical case summariser. You receive a recommendation and reasoning from a prior auth review agent. Polish the case summary into a clear, evidence-based 2-3 paragraph narrative that a human reviewer or downstream notification system can read. Do not change the recommendation or invent new clinical findings. Return your output as strict JSON with keys: recommendation, caseSummary, reasoning.&#34;" target="data.systemPrompt.prompt" />
+            <zeebe:input source="=&#34;Recommendation: &#34; + fromAi(toolCall.recommendation, &#34;The final recommendation. Must be one of: approve, reject, escalate, awaiting_info.&#34;, &#34;string&#34;) + &#34; | Draft case summary: &#34; + fromAi(toolCall.caseSummary, &#34;2-3 paragraph clinical case summary citing the guideline evidence basis.&#34;, &#34;string&#34;) + &#34; | Reasoning: &#34; + fromAi(toolCall.reasoning, &#34;Structured rationale: which required_clinical_history fields were satisfied or missing, any red flag found, and the resulting decision.&#34;, &#34;string&#34;)" target="data.userPrompt.prompt" />
             <zeebe:input source="in-process" target="data.memory.storage.type" />
             <zeebe:input source="=10" target="data.memory.contextWindowSize" />
             <zeebe:input source="=2" target="data.limits.maxModelCalls" />
@@ -131,10 +111,29 @@
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
       </bpmn:serviceTask>
-
+      <bpmn:serviceTask id="Activity_1g9kss7" name="Extract Clinical Document" zeebe:modelerTemplate="idp-unstructured-extraction-connector-085b0da0-9c22-4346-a4eb-3395421c1190" zeebe:modelerTemplateVersion="2" zeebe:modelerTemplateIcon="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICAgIDxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMF8xXzcxKSI+CiAgICAgICAgPGcgc3R5bGU9Im1peC1ibGVuZC1tb2RlOm11bHRpcGx5Ij4KICAgICAgICAgICAgPHBhdGggZD0iTTE5LjE3ODkgMEgwVjE5LjE3ODlIMTkuMTc4OVYwWiIgZmlsbD0id2hpdGUiIGZpbGwtb3BhY2l0eT0iMC4wMSIvPgogICAgICAgIDwvZz4KICAgICAgICA8cGF0aCBkPSJNMTAuMTg3OSA4Ljk5MDFWNS4zOTQwN0g1LjM5MzE4VjEzLjc4NDhIMTMuNzgzOVY4Ljk5MDFIMTAuMTg3OVpNNi41OTE4NiA2LjU5Mjc0SDguOTg5MjFWOC45OTAxSDYuNTkxODZWNi41OTI3NFpNOC45ODkyMSAxMi41ODYxSDYuNTkxODZWMTAuMTg4OEg4Ljk4OTIxVjEyLjU4NjFaTTEyLjU4NTIgMTIuNTg2MUgxMC4xODc5VjEwLjE4ODhIMTIuNTg1MlYxMi41ODYxWiIgZmlsbD0iI0ZDNUQwRCIvPgogICAgICAgIDxwYXRoIGQ9Ik0xNS41ODE5IDE2Ljc4MTVIMy41OTUxNkMzLjI3NzM3IDE2Ljc4MTEgMi45NzI2OSAxNi42NTQ3IDIuNzQ3OTcgMTYuNDNDMi41MjMyNiAxNi4yMDUzIDIuMzk2ODUgMTUuOTAwNiAyLjM5NjQ4IDE1LjU4MjhWMy41OTYwNUMyLjM5Njg1IDMuMjc4MjUgMi41MjMyNiAyLjk3MzU3IDIuNzQ3OTcgMi43NDg4NkMyLjk3MjY5IDIuNTI0MTQgMy4yNzczNyAyLjM5NzczIDMuNTk1MTYgMi4zOTczN0g5LjU4ODU1VjMuNTk2MDVIMy41OTUxNlYxNS41ODI4SDE1LjU4MTlWOS41ODk0NEgxNi43ODA2VjE1LjU4MjhDMTYuNzgwMyAxNS45MDA2IDE2LjY1MzkgMTYuMjA1MyAxNi40MjkxIDE2LjQzQzE2LjIwNDQgMTYuNjU0NyAxNS44OTk3IDE2Ljc4MTEgMTUuNTgxOSAxNi43ODE1WiIgZmlsbD0iIzE2MTYxNiIvPgogICAgICAgIDxwYXRoIGQ9Ik0xNi41MjYzIDUuMDUyNjNDMTYuMzg2OCA1LjA1MjYzIDE2LjI1OTIgNS4xMzE0NyAxNi4xOTY4IDUuMjU2MjZMMTUuODgzNCA1Ljg4MzAyTDE1LjI1NjMgNi4xOTY3NkMxNS4xMzE1IDYuMjU5MTcgMTUuMDUyNiA2LjM4Njc2IDE1LjA1MjYgNi41MjYzMkMxNS4wNTI2IDYuNjY1ODcgMTUuMTMxNSA2Ljc5MzQ2IDE1LjI1NjMgNi44NTU4N0wxNS44ODM0IDcuMTY5MjVMMTYuMTk2OCA3Ljc5NjM3QzE2LjI1OTIgNy45MjExNiAxNi4zODY4IDggMTYuNTI2MyA4QzE2LjY2NTkgOCAxNi43OTM1IDcuOTIxMTYgMTYuODU1OSA3Ljc5NjM3TDE3LjE2OTYgNy4xNjkyNUwxNy43OTY0IDYuODU1ODdDMTcuOTIxMiA2Ljc5MzQ2IDE4IDYuNjY1ODcgMTggNi41MjYzMkMxOCA2LjM4Njc2IDE3LjkyMTIgNi4yNTkxNyAxNy43OTY0IDYuMTk2NzZMMTcuMTY5NiA1Ljg4MzAyTDE2Ljg1NTkgNS4yNTYyNkwxNi44Mjk2IDUuMjExNjRDMTYuNzYxNSA1LjExMjk0IDE2LjY0ODQgNS4wNTI2MyAxNi41MjYzIDUuMDUyNjNaTTEzLjAyNjMgMi4yODk0N0MxMi44ODY4IDIuMjg5NDcgMTIuNzU5MiAyLjM2ODMgMTIuNjk2OCAyLjQ5MzExTDEyLjE5OTIgMy40ODgyOEwxMS4yMDM2IDMuOTg2MjRDMTEuMDc4OCA0LjA0ODY1IDExIDQuMTc2MjMgMTEgNC4zMTU3OUMxMSA0LjQ1NTM1IDExLjA3ODggNC41ODI5MyAxMS4yMDM2IDQuNjQ1MzRMMTIuMTk5MiA1LjE0MjkzTDEyLjY5NjggNi4xMzg0OEMxMi43NTkyIDYuMjYzMjYgMTIuODg2OCA2LjM0MjExIDEzLjAyNjMgNi4zNDIxMUMxMy4xNjU5IDYuMzQyMTEgMTMuMjkzNSA2LjI2MzI2IDEzLjM1NTkgNi4xMzg0OEwxMy44NTM4IDUuMTQyOTNMMTQuODQ5IDQuNjQ1MzRDMTQuOTczOCA0LjU4MjkzIDE1LjA1MjYgNC40NTUzNSAxNS4wNTI2IDQuMzE1NzlDMTUuMDUyNiA0LjE3NjIzIDE0Ljk3MzggNC4wNDg2NSAxNC44NDkgMy45ODYyNEwxMy44NTM4IDMuNDg4MjhMMTMuMzU1OSAyLjQ5MzExTDEzLjMyOTYgMi40NDg1QzEzLjI2MTUgMi4zNDk3NyAxMy4xNDg0IDIuMjg5NDcgMTMuMDI2MyAyLjI4OTQ3Wk0xNi41MjYzIDFDMTYuMzg2OCAxIDE2LjI1OTIgMS4wNzg4MiAxNi4xOTY4IDEuMjAzNjRMMTUuODgzNCAxLjgzMDM5TDE1LjI1NjMgMi4xNDQxMkMxNS4xMzE1IDIuMjA2NTMgMTUuMDUyNiAyLjMzNDE0IDE1LjA1MjYgMi40NzM2OEMxNS4wNTI2IDIuNjEzMjMgMTUuMTMxNSAyLjc0MDg0IDE1LjI1NjMgMi44MDMyNUwxNS44ODM0IDMuMTE2NjJMMTYuMTk2OCAzLjc0MzczQzE2LjI1OTIgMy44Njg1MyAxNi4zODY4IDMuOTQ3MzcgMTYuNTI2MyAzLjk0NzM3QzE2LjY2NTkgMy45NDczNyAxNi43OTM1IDMuODY4NTMgMTYuODU1OSAzLjc0MzczTDE3LjE2OTYgMy4xMTY2MkwxNy43OTY0IDIuODAzMjVDMTcuOTIxMiAyLjc0MDg0IDE4IDIuNjEzMjMgMTggMi40NzM2OEMxOCAyLjMzNDE0IDE3LjkyMTIgMi4yMDY1MyAxNy43OTY0IDIuMTQ0MTJMMTcuMTY5NiAxLjgzMDM5TDE2Ljg1NTkgMS4yMDM2NEwxNi44Mjk2IDEuMTU5MDNDMTYuNzYxNSAxLjA2MDMgMTYuNjQ4NCAxIDE2LjUyNjMgMVoiIGZpbGw9IiNGQzVEMEQiLz4KICAgIDwvZz4KICAgIDxkZWZzPgogICAgICAgIDxjbGlwUGF0aCBpZD0iY2xpcDBfMV83MSI+CiAgICAgICAgICAgIDxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0id2hpdGUiLz4KICAgICAgICA8L2NsaXBQYXRoPgogICAgPC9kZWZzPgo8L3N2Zz4K">
+        <bpmn:documentation>Run IDP (AWS Textract + Claude) on the referring GP's referral letter PDF. Returns a single `extraction` object whose keys match the field_id values used by the clinical guidelines table (camelCased): patientFullName, patientDob, medicareNumber, fundMemberNumber, referringGpName, referringGpEmail, procedureRequested, procedureCode, clinicalUrgency, workingDiagnosis, durationOfSymptomsWeeks, physiotherapyHistory, conservativeManagementHistory, neurologicalExamination, painScale, redFlagScreening, headachePatternDurationWeeks, priorImaging, imagingFindings, functionalAssessment, mechanicalSymptoms. Fields not present in the document return null. Call this first.</bpmn:documentation>
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="io.camunda:idp-unstructured-connector-template:1" retries="3" />
+          <zeebe:ioMapping>
+            <zeebe:input source="=[&#10;  {&#10;    &#34;name&#34;: &#34;idpProcedureCode&#34;,&#10;    &#34;prompt&#34;: &#34;Get Procedure code&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpDurationOfSymptomsWeeks&#34;,&#10;    &#34;prompt&#34;: &#34;Get duration of symptoms&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpPhysiotherapyHistory&#34;,&#10;    &#34;prompt&#34;: &#34;Get Physiotherapy History&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpRedFlagScreening&#34;,&#10;    &#34;prompt&#34;: &#34;Get and Red flag screening&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpNeurologicalExamination&#34;,&#10;    &#34;prompt&#34;: &#34;Get details of Neurological Examination&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpConservativeManagementHistory&#34;,&#10;    &#34;prompt&#34;: &#34;Get details of Conservative ManagementHistory&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpReferringGpEmail&#34;,&#10;    &#34;prompt&#34;: &#34;Get  Referring Gp Email&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpReferringGpName&#34;,&#10;    &#34;prompt&#34;: &#34;Get  Referring Gp Name&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpPatientFullName&#34;,&#10;    &#34;prompt&#34;: &#34;Get Patient Full Name&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpReferralReference&#34;,&#10;    &#34;prompt&#34;: &#34;Get Referral Reference&#34;&#10;  }&#10;]" target="input.taxonomyItems" />
+            <zeebe:input source="={&#10;  &#34;modelId&#34;: &#34;anthropic.claude-sonnet-4-20250514-v1:0&#34;,&#10;  &#34;maxTokens&#34;: 512,&#10;  &#34;temperature&#34;: 0.5,&#10;  &#34;topP&#34;: 0.9&#10;}" target="input.converseData" />
+            <zeebe:input source="=document" target="input.document" />
+            <zeebe:input source="pdfBox" target="extractor.type" />
+            <zeebe:input source="bedrockAi" target="ai.type" />
+            <zeebe:input source="credentials" target="ai.awsAuthType" />
+            <zeebe:input source="{{secrets.IDP_AWS_ACCESSKEY}}" target="ai.accessKey" />
+            <zeebe:input source="{{secrets.IDP_AWS_SECRETKEY}}" target="ai.secretKey" />
+            <zeebe:input source="{{secrets.IDP_AWS_REGION}}" target="ai.region" />
+          </zeebe:ioMapping>
+          <zeebe:taskHeaders>
+            <zeebe:header key="elementTemplateVersion" value="2" />
+            <zeebe:header key="elementTemplateId" value="io.camunda.connector.IdpUnstructuredExtractionOutBoundTemplate.v1" />
+            <zeebe:header key="retryBackoff" value="PT0S" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+      </bpmn:serviceTask>
     </bpmn:adHocSubProcess>
-
-    <!-- Routing after agent -->
     <bpmn:exclusiveGateway id="Gateway_Decision" name="Agent Recommendation" default="Flow_Escalate">
       <bpmn:incoming>Flow_FromAgent</bpmn:incoming>
       <bpmn:outgoing>Flow_AutoApprove</bpmn:outgoing>
@@ -142,16 +141,14 @@
       <bpmn:outgoing>Flow_AwaitingInfo</bpmn:outgoing>
       <bpmn:outgoing>Flow_Escalate</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-
-    <!-- Approved branch -->
     <bpmn:serviceTask id="Task_NotifyApproved" name="Notify GP — Approved">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="={&quot;Authorization&quot;: &quot;Bearer {{secrets.RESEND_API_KEY}}&quot;, &quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
-          <zeebe:input source="={&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;Prior Authorisation APPROVED — &quot; + patientName,&quot;text&quot;:&quot;Dear &quot; + gpName + &quot;,\n\nApproved: &quot; + procedureRequested + &quot; for &quot; + patientName + &quot;.\n\n&quot; + caseSummary + &quot;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;}" target="body" />
+          <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
+          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[gpEmail],&#34;subject&#34;:&#34;Prior Authorisation APPROVED — &#34; + patientName,&#34;text&#34;:&#34;Dear &#34; + gpName + &#34;,\n\nApproved: &#34; + procedureRequested + &#34; for &#34; + patientName + &#34;.\n\n&#34; + caseSummary + &#34;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;}" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -162,8 +159,6 @@
       <bpmn:incoming>Flow_AutoApprove</bpmn:incoming>
       <bpmn:outgoing>Flow_EndApproved</bpmn:outgoing>
     </bpmn:serviceTask>
-
-    <!-- Awaiting info branch -->
     <bpmn:intermediateCatchEvent id="Event_GpReply" name="GP reply received">
       <bpmn:extensionElements>
         <zeebe:properties>
@@ -174,16 +169,14 @@
       <bpmn:outgoing>Flow_GpReplyToAgent</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_GpReply" messageRef="Message_GpReply" />
     </bpmn:intermediateCatchEvent>
-
-    <!-- Escalate branch -->
     <bpmn:serviceTask id="Task_NotifyReviewer" name="Notify Clinical Reviewer">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="={&quot;Authorization&quot;: &quot;Bearer {{secrets.RESEND_API_KEY}}&quot;, &quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
-          <zeebe:input source="={&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;ACTION REQUIRED — Prior Auth Escalated: &quot; + patientName,&quot;text&quot;:&quot;A prior authorisation request requires clinical review.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nAgent reasoning: &quot; + reasoning + &quot;\n\nCase Summary:\n&quot; + caseSummary + &quot;\n\nPlease review in Tasklist.\n\nPrior Authorisation Processing&quot;}" target="body" />
+          <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
+          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[gpEmail],&#34;subject&#34;:&#34;ACTION REQUIRED — Prior Auth Escalated: &#34; + patientName,&#34;text&#34;:&#34;A prior authorisation request requires clinical review.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nAgent reasoning: &#34; + reasoning + &#34;\n\nCase Summary:\n&#34; + caseSummary + &#34;\n\nPlease review in Tasklist.\n\nPrior Authorisation Processing&#34;}" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -194,7 +187,6 @@
       <bpmn:incoming>Flow_Escalate</bpmn:incoming>
       <bpmn:outgoing>Flow_ToOverride</bpmn:outgoing>
     </bpmn:serviceTask>
-
     <bpmn:userTask id="Task_ClinicalOverride" name="Clinical Override Review">
       <bpmn:extensionElements>
         <zeebe:userTask />
@@ -212,22 +204,19 @@
       <bpmn:incoming>Flow_ToOverride</bpmn:incoming>
       <bpmn:outgoing>Flow_AfterOverride</bpmn:outgoing>
     </bpmn:userTask>
-
     <bpmn:exclusiveGateway id="Gateway_Override" name="Override Decision">
       <bpmn:incoming>Flow_AfterOverride</bpmn:incoming>
       <bpmn:outgoing>Flow_OverrideApprove</bpmn:outgoing>
       <bpmn:outgoing>Flow_OverrideReject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-
-    <!-- Reject branch -->
     <bpmn:serviceTask id="Task_NotifyRejected" name="Notify GP — Rejected">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="={&quot;Authorization&quot;: &quot;Bearer {{secrets.RESEND_API_KEY}}&quot;, &quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
-          <zeebe:input source="={&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;Prior Authorisation NOT APPROVED — &quot; + patientName,&quot;text&quot;:&quot;Dear &quot; + gpName + &quot;,\n\nThe prior authorisation for &quot; + procedureRequested + &quot; has NOT been approved.\n\nReason: &quot; + reasoning + &quot;\n\nCase Summary:\n&quot; + caseSummary + &quot;\n\nPlease submit additional documentation if appropriate.\n\nPrior Authorisation Processing&quot;}" target="body" />
+          <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
+          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[gpEmail],&#34;subject&#34;:&#34;Prior Authorisation NOT APPROVED — &#34; + patientName,&#34;text&#34;:&#34;Dear &#34; + gpName + &#34;,\n\nThe prior authorisation for &#34; + procedureRequested + &#34; has NOT been approved.\n\nReason: &#34; + reasoning + &#34;\n\nCase Summary:\n&#34; + caseSummary + &#34;\n\nPlease submit additional documentation if appropriate.\n\nPrior Authorisation Processing&#34;}" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -239,15 +228,14 @@
       <bpmn:incoming>Flow_OverrideReject</bpmn:incoming>
       <bpmn:outgoing>Flow_EndRejected</bpmn:outgoing>
     </bpmn:serviceTask>
-
     <bpmn:serviceTask id="Task_NotifyOverrideApproved" name="Notify GP — Clinician Approved">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="={&quot;Authorization&quot;: &quot;Bearer {{secrets.RESEND_API_KEY}}&quot;, &quot;Content-Type&quot;: &quot;application/json&quot;}" target="headers" />
-          <zeebe:input source="={&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;Prior Authorisation APPROVED (Clinical Review) — &quot; + patientName,&quot;text&quot;:&quot;Dear &quot; + gpName + &quot;,\n\nFollowing clinical review, &quot; + procedureRequested + &quot; for &quot; + patientName + &quot; has been APPROVED.\n\nReviewer notes: &quot; + reviewerNotes + &quot;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;}" target="body" />
+          <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
+          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[gpEmail],&#34;subject&#34;:&#34;Prior Authorisation APPROVED (Clinical Review) — &#34; + patientName,&#34;text&#34;:&#34;Dear &#34; + gpName + &#34;,\n\nFollowing clinical review, &#34; + procedureRequested + &#34; for &#34; + patientName + &#34; has been APPROVED.\n\nReviewer notes: &#34; + reviewerNotes + &#34;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;}" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -258,7 +246,6 @@
       <bpmn:incoming>Flow_OverrideApprove</bpmn:incoming>
       <bpmn:outgoing>Flow_EndOverrideApproved</bpmn:outgoing>
     </bpmn:serviceTask>
-
     <bpmn:endEvent id="EndEvent_Approved" name="Authorisation Approved">
       <bpmn:incoming>Flow_EndApproved</bpmn:incoming>
     </bpmn:endEvent>
@@ -268,8 +255,6 @@
     <bpmn:endEvent id="EndEvent_OverrideApproved" name="Approved — Clinical Override">
       <bpmn:incoming>Flow_EndOverrideApproved</bpmn:incoming>
     </bpmn:endEvent>
-
-    <!-- Agent error boundary -->
     <bpmn:boundaryEvent id="Boundary_AgentError" name="Agent error" attachedToRef="Activity_Agent">
       <bpmn:outgoing>Flow_AgentError</bpmn:outgoing>
       <bpmn:errorEventDefinition id="ErrorEventDefinition_AgentError" />
@@ -277,8 +262,6 @@
     <bpmn:endEvent id="EndEvent_AgentError" name="Agent Error">
       <bpmn:incoming>Flow_AgentError</bpmn:incoming>
     </bpmn:endEvent>
-
-    <!-- Sequence flows -->
     <bpmn:sequenceFlow id="Flow_ToAgent" sourceRef="StartEvent_1" targetRef="Activity_Agent" />
     <bpmn:sequenceFlow id="Flow_FromAgent" sourceRef="Activity_Agent" targetRef="Gateway_Decision" />
     <bpmn:sequenceFlow id="Flow_GpReplyToAgent" sourceRef="Event_GpReply" targetRef="Activity_Agent" />
@@ -304,51 +287,166 @@
     <bpmn:sequenceFlow id="Flow_EndRejected" sourceRef="Task_NotifyRejected" targetRef="EndEvent_Rejected" />
     <bpmn:sequenceFlow id="Flow_EndOverrideApproved" sourceRef="Task_NotifyOverrideApproved" targetRef="EndEvent_OverrideApproved" />
     <bpmn:sequenceFlow id="Flow_AgentError" sourceRef="Boundary_AgentError" targetRef="EndEvent_AgentError" />
-
   </bpmn:process>
-
   <bpmn:message id="Message_GpReply" name="GpReply">
     <bpmn:extensionElements>
       <zeebe:subscription correlationKey="=patientId" />
     </bpmn:extensionElements>
   </bpmn:message>
-
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="prior-auth-process">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1"><dc:Bounds x="152" y="362" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="126" y="405" width="89" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_Agent_di" bpmnElement="Activity_Agent" isExpanded="true"><dc:Bounds x="260" y="260" width="780" height="240" /><bpmndi:BPMNLabel /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Tool_ExtractDocument_di" bpmnElement="Tool_ExtractDocument"><dc:Bounds x="290" y="340" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Tool_CheckGuidelines_di" bpmnElement="Tool_CheckGuidelines"><dc:Bounds x="450" y="340" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Tool_RequestMissingInfo_di" bpmnElement="Tool_RequestMissingInfo"><dc:Bounds x="610" y="340" width="140" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Tool_Summarise_di" bpmnElement="Tool_Summarise"><dc:Bounds x="790" y="340" width="140" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true"><dc:Bounds x="1085" y="355" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="1066" y="412" width="89" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyApproved_di" bpmnElement="Task_NotifyApproved"><dc:Bounds x="1190" y="160" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_GpReply_di" bpmnElement="Event_GpReply"><dc:Bounds x="1192" y="282" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1170" y="325" width="81" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyReviewer_di" bpmnElement="Task_NotifyReviewer"><dc:Bounds x="1190" y="380" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_ClinicalOverride_di" bpmnElement="Task_ClinicalOverride"><dc:Bounds x="1350" y="380" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyRejected_di" bpmnElement="Task_NotifyRejected"><dc:Bounds x="1190" y="510" width="120" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_Override_di" bpmnElement="Gateway_Override" isMarkerVisible="true"><dc:Bounds x="1515" y="395" width="50" height="50" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyOverrideApproved_di" bpmnElement="Task_NotifyOverrideApproved"><dc:Bounds x="1620" y="380" width="140" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved"><dc:Bounds x="1352" y="182" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1328" y="225" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected"><dc:Bounds x="1352" y="532" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1328" y="575" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_OverrideApproved_di" bpmnElement="EndEvent_OverrideApproved"><dc:Bounds x="1802" y="402" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1778" y="445" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Boundary_AgentError_di" bpmnElement="Boundary_AgentError"><dc:Bounds x="1022" y="482" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1010" y="525" width="60" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_AgentError_di" bpmnElement="EndEvent_AgentError"><dc:Bounds x="1022" y="602" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1003" y="645" width="74" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_ToAgent_di" bpmnElement="Flow_ToAgent"><di:waypoint x="188" y="380" /><di:waypoint x="260" y="380" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_FromAgent_di" bpmnElement="Flow_FromAgent"><di:waypoint x="1040" y="380" /><di:waypoint x="1085" y="380" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_GpReplyToAgent_di" bpmnElement="Flow_GpReplyToAgent"><di:waypoint x="1210" y="282" /><di:waypoint x="1210" y="240" /><di:waypoint x="650" y="240" /><di:waypoint x="650" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_AutoApprove_di" bpmnElement="Flow_AutoApprove"><di:waypoint x="1110" y="355" /><di:waypoint x="1110" y="200" /><di:waypoint x="1190" y="200" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Reject_di" bpmnElement="Flow_Reject"><di:waypoint x="1110" y="405" /><di:waypoint x="1110" y="550" /><di:waypoint x="1190" y="550" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_AwaitingInfo_di" bpmnElement="Flow_AwaitingInfo"><di:waypoint x="1135" y="380" /><di:waypoint x="1163" y="380" /><di:waypoint x="1163" y="300" /><di:waypoint x="1192" y="300" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Escalate_di" bpmnElement="Flow_Escalate"><di:waypoint x="1135" y="380" /><di:waypoint x="1163" y="380" /><di:waypoint x="1163" y="420" /><di:waypoint x="1190" y="420" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_ToOverride_di" bpmnElement="Flow_ToOverride"><di:waypoint x="1310" y="420" /><di:waypoint x="1350" y="420" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_AfterOverride_di" bpmnElement="Flow_AfterOverride"><di:waypoint x="1470" y="420" /><di:waypoint x="1515" y="420" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_OverrideApprove_di" bpmnElement="Flow_OverrideApprove"><di:waypoint x="1565" y="420" /><di:waypoint x="1620" y="420" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_OverrideReject_di" bpmnElement="Flow_OverrideReject"><di:waypoint x="1540" y="445" /><di:waypoint x="1540" y="550" /><di:waypoint x="1310" y="550" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_EndApproved_di" bpmnElement="Flow_EndApproved"><di:waypoint x="1310" y="200" /><di:waypoint x="1352" y="200" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_EndRejected_di" bpmnElement="Flow_EndRejected"><di:waypoint x="1310" y="550" /><di:waypoint x="1352" y="550" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_EndOverrideApproved_di" bpmnElement="Flow_EndOverrideApproved"><di:waypoint x="1760" y="420" /><di:waypoint x="1802" y="420" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_AgentError_di" bpmnElement="Flow_AgentError"><di:waypoint x="1040" y="518" /><di:waypoint x="1040" y="602" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="152" y="362" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="126" y="405" width="89" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Agent_di" bpmnElement="Activity_Agent" isExpanded="true">
+        <dc:Bounds x="260" y="260" width="780" height="240" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tool_CheckGuidelines_di" bpmnElement="Tool_CheckGuidelines">
+        <dc:Bounds x="450" y="340" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tool_RequestMissingInfo_di" bpmnElement="Tool_RequestMissingInfo">
+        <dc:Bounds x="610" y="340" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tool_Summarise_di" bpmnElement="Tool_Summarise">
+        <dc:Bounds x="790" y="340" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_12upyjd_di" bpmnElement="Activity_1g9kss7">
+        <dc:Bounds x="300" y="340" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true">
+        <dc:Bounds x="1085" y="355" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1066" y="412" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyApproved_di" bpmnElement="Task_NotifyApproved">
+        <dc:Bounds x="1190" y="160" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_GpReply_di" bpmnElement="Event_GpReply">
+        <dc:Bounds x="1192" y="282" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1170" y="325" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyReviewer_di" bpmnElement="Task_NotifyReviewer">
+        <dc:Bounds x="1190" y="380" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ClinicalOverride_di" bpmnElement="Task_ClinicalOverride">
+        <dc:Bounds x="1350" y="380" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Override_di" bpmnElement="Gateway_Override" isMarkerVisible="true">
+        <dc:Bounds x="1515" y="395" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyRejected_di" bpmnElement="Task_NotifyRejected">
+        <dc:Bounds x="1190" y="510" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyOverrideApproved_di" bpmnElement="Task_NotifyOverrideApproved">
+        <dc:Bounds x="1620" y="380" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved">
+        <dc:Bounds x="1352" y="182" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1328" y="225" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected">
+        <dc:Bounds x="1352" y="532" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1328" y="575" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_OverrideApproved_di" bpmnElement="EndEvent_OverrideApproved">
+        <dc:Bounds x="1802" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1778" y="445" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AgentError_di" bpmnElement="EndEvent_AgentError">
+        <dc:Bounds x="1022" y="602" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1003" y="645" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_AgentError_di" bpmnElement="Boundary_AgentError">
+        <dc:Bounds x="1022" y="482" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1010" y="525" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToAgent_di" bpmnElement="Flow_ToAgent">
+        <di:waypoint x="188" y="380" />
+        <di:waypoint x="260" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FromAgent_di" bpmnElement="Flow_FromAgent">
+        <di:waypoint x="1040" y="380" />
+        <di:waypoint x="1085" y="380" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_GpReplyToAgent_di" bpmnElement="Flow_GpReplyToAgent">
+        <di:waypoint x="1210" y="282" />
+        <di:waypoint x="1210" y="240" />
+        <di:waypoint x="650" y="240" />
+        <di:waypoint x="650" y="260" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AutoApprove_di" bpmnElement="Flow_AutoApprove">
+        <di:waypoint x="1110" y="355" />
+        <di:waypoint x="1110" y="200" />
+        <di:waypoint x="1190" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Reject_di" bpmnElement="Flow_Reject">
+        <di:waypoint x="1110" y="405" />
+        <di:waypoint x="1110" y="550" />
+        <di:waypoint x="1190" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AwaitingInfo_di" bpmnElement="Flow_AwaitingInfo">
+        <di:waypoint x="1135" y="380" />
+        <di:waypoint x="1163" y="380" />
+        <di:waypoint x="1163" y="300" />
+        <di:waypoint x="1192" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Escalate_di" bpmnElement="Flow_Escalate">
+        <di:waypoint x="1135" y="380" />
+        <di:waypoint x="1163" y="380" />
+        <di:waypoint x="1163" y="420" />
+        <di:waypoint x="1190" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToOverride_di" bpmnElement="Flow_ToOverride">
+        <di:waypoint x="1310" y="420" />
+        <di:waypoint x="1350" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AfterOverride_di" bpmnElement="Flow_AfterOverride">
+        <di:waypoint x="1470" y="420" />
+        <di:waypoint x="1515" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OverrideApprove_di" bpmnElement="Flow_OverrideApprove">
+        <di:waypoint x="1565" y="420" />
+        <di:waypoint x="1620" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OverrideReject_di" bpmnElement="Flow_OverrideReject">
+        <di:waypoint x="1540" y="445" />
+        <di:waypoint x="1540" y="550" />
+        <di:waypoint x="1310" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndApproved_di" bpmnElement="Flow_EndApproved">
+        <di:waypoint x="1310" y="200" />
+        <di:waypoint x="1352" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndRejected_di" bpmnElement="Flow_EndRejected">
+        <di:waypoint x="1310" y="550" />
+        <di:waypoint x="1352" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndOverrideApproved_di" bpmnElement="Flow_EndOverrideApproved">
+        <di:waypoint x="1760" y="420" />
+        <di:waypoint x="1802" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AgentError_di" bpmnElement="Flow_AgentError">
+        <di:waypoint x="1040" y="518" />
+        <di:waypoint x="1040" y="602" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
