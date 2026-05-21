@@ -213,16 +213,8 @@
               "value": "MRI-BRAIN"
             },
             {
-              "label": "CT Scan",
-              "value": "CT-SCAN"
-            },
-            {
-              "label": "Specialist Consultation",
-              "value": "SPEC-CONSULT"
-            },
-            {
-              "label": "Surgery",
-              "value": "SURGERY"
+              "label": "Knee Arthroscopy",
+              "value": "KNEE-ARTHROSCOPY"
             }
           ],
           "validate": {
