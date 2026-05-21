@@ -118,7 +118,7 @@
           <zeebe:ioMapping>
             <zeebe:input source="=[&#10;  {&#10;    &#34;name&#34;: &#34;idpProcedureCode&#34;,&#10;    &#34;prompt&#34;: &#34;Get Procedure code&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpDurationOfSymptomsWeeks&#34;,&#10;    &#34;prompt&#34;: &#34;Get duration of symptoms&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpPhysiotherapyHistory&#34;,&#10;    &#34;prompt&#34;: &#34;Get Physiotherapy History&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpRedFlagScreening&#34;,&#10;    &#34;prompt&#34;: &#34;Get and Red flag screening&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpNeurologicalExamination&#34;,&#10;    &#34;prompt&#34;: &#34;Get details of Neurological Examination&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpConservativeManagementHistory&#34;,&#10;    &#34;prompt&#34;: &#34;Get details of Conservative ManagementHistory&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpReferringGpEmail&#34;,&#10;    &#34;prompt&#34;: &#34;Get  Referring Gp Email&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpReferringGpName&#34;,&#10;    &#34;prompt&#34;: &#34;Get  Referring Gp Name&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpPatientFullName&#34;,&#10;    &#34;prompt&#34;: &#34;Get Patient Full Name&#34;&#10;  },&#10;  {&#10;    &#34;name&#34;: &#34;idpReferralReference&#34;,&#10;    &#34;prompt&#34;: &#34;Get Referral Reference&#34;&#10;  }&#10;]" target="input.taxonomyItems" />
             <zeebe:input source="={&#10;  &#34;modelId&#34;: &#34;anthropic.claude-sonnet-4-20250514-v1:0&#34;,&#10;  &#34;maxTokens&#34;: 512,&#10;  &#34;temperature&#34;: 0.5,&#10;  &#34;topP&#34;: 0.9&#10;}" target="input.converseData" />
-            <zeebe:input source="=document" target="input.document" />
+            <zeebe:input source="=clinicalDocuments[1]" target="input.document" />
             <zeebe:input source="pdfBox" target="extractor.type" />
             <zeebe:input source="bedrockAi" target="ai.type" />
             <zeebe:input source="credentials" target="ai.awsAuthType" />
@@ -129,6 +129,7 @@
           <zeebe:taskHeaders>
             <zeebe:header key="elementTemplateVersion" value="2" />
             <zeebe:header key="elementTemplateId" value="io.camunda.connector.IdpUnstructuredExtractionOutBoundTemplate.v1" />
+            <zeebe:header key="resultExpression" value="={&#10;  idpProcedureCode: extractedFields.idpProcedureCode,&#10;  idpDurationOfSymptomsWeeks: extractedFields.idpDurationOfSymptomsWeeks,&#10;  idpPhysiotherapyHistory: extractedFields.idpPhysiotherapyHistory,&#10;  idpRedFlagScreening: extractedFields.idpRedFlagScreening,&#10;  idpNeurologicalExamination: extractedFields.idpNeurologicalExamination,&#10;  idpConservativeManagementHistory: extractedFields.idpConservativeManagementHistory,&#10;  idpReferringGpEmail: extractedFields.idpReferringGpEmail,&#10;  idpReferringGpName: extractedFields.idpReferringGpName,&#10;  idpPatientFullName: extractedFields.idpPatientFullName,&#10;  idpReferralReference: extractedFields.idpReferralReference&#10;}" />
             <zeebe:header key="retryBackoff" value="PT0S" />
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
