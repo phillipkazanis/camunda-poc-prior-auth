@@ -1,1 +1,273 @@
-fixed
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="8cca9cf" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+  <bpmn:process id="prior-auth-process" name="Prior Authorisation" isExecutable="true">
+
+    <bpmn:startEvent id="StartEvent_1" name="Prior Auth Request Received">
+      <bpmn:extensionElements>
+        <zeebe:formDefinition formId="prior-auth-start-form" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_ToAgent</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:adHocSubProcess id="Activity_Agent" name="Prior Auth AI Agent" zeebe:modelerTemplate="io.camunda.connectors.agenticai.aiagent.jobworker.v1" zeebe:modelerTemplateVersion="5">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda.agenticai:aiagent-job-worker:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="bedrock" target="provider.type" />
+          <zeebe:input source="us-east-1" target="provider.bedrock.region" />
+          <zeebe:input source="credentials" target="provider.bedrock.authentication.type" />
+          <zeebe:input source="{{secrets.BEDROCK_API_ACCESS_KEY}}" target="provider.bedrock.authentication.accessKey" />
+          <zeebe:input source="{{secrets.BEDROCK_API_ACCESS_SECRET}}" target="provider.bedrock.authentication.secretKey" />
+          <zeebe:input source="us.anthropic.claude-sonnet-4-20250514-v1:0" target="provider.bedrock.model.model" />
+          <zeebe:input source="=10000" target="provider.bedrock.model.parameters.maxTokens" />
+          <zeebe:input source="=0.1" target="provider.bedrock.model.parameters.temperature" />
+          <zeebe:input source="=&#34;You are a **PriorAuthEvaluationAgent** reviewing prior authorisation requests for medical procedures. You have access to tools to help you evaluate the clinical documentation and make a recommendation. Be systematic and thorough. Use the summarise tool to create a structured case summary.&#34;" target="data.systemPrompt.prompt" />
+          <zeebe:input source="=&#34;A prior authorisation request has been submitted. Patient: &#34; + patientName + &#34; | Procedure: &#34; + procedureRequested + &#34; | Diagnosis: &#34; + diagnosis + &#34; | Coverage: &#34; + coverageType + &#34; | Urgency: &#34; + urgencyLevel + &#34; | Clinical notes: &#34; + clinicalNotes + &#34;. Summarise the case and provide your assessment.&#34;" target="data.userPrompt.prompt" />
+          <zeebe:input target="agentContext" />
+          <zeebe:input source="in-process" target="data.memory.storage.type" />
+          <zeebe:input source="=20" target="data.memory.contextWindowSize" />
+          <zeebe:input source="=10" target="data.limits.maxModelCalls" />
+          <zeebe:input source="WAIT_FOR_TOOL_CALL_RESULTS" target="data.events.behavior" />
+          <zeebe:input source="text" target="data.response.format.type" />
+          <zeebe:input source="=false" target="data.response.format.parseJson" />
+          <zeebe:input source="=false" target="data.response.includeAssistantMessage" />
+          <zeebe:input source="=false" target="data.response.includeAgentContext" />
+          <zeebe:output source="=agent" target="agent" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="5" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connectors.agenticai.aiagent.jobworker.v1" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+        <zeebe:adHoc outputCollection="toolCallResults" outputElement="={&#10;  id: toolCall._meta.id,&#10;  name: toolCall._meta.name,&#10;  content: toolCallResult&#10;}" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToAgent</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToDMN</bpmn:outgoing>
+
+      <bpmn:serviceTask id="Task_SummariseCase" name="summarise case for review">
+        <bpmn:documentation>Use this to create a structured case summary for clinical review. Include: patient details, procedure requested, diagnosis, clinical justification, urgency indicators, coverage type, and your recommendation.</bpmn:documentation>
+        <bpmn:extensionElements>
+          <zeebe:taskDefinition type="io.camunda.agenticai:aiagent:1" retries="3" />
+          <zeebe:ioMapping>
+            <zeebe:input source="bedrock" target="provider.type" />
+            <zeebe:input source="us-east-1" target="provider.bedrock.region" />
+            <zeebe:input source="credentials" target="provider.bedrock.authentication.type" />
+            <zeebe:input source="{{secrets.BEDROCK_API_ACCESS_KEY}}" target="provider.bedrock.authentication.accessKey" />
+            <zeebe:input source="{{secrets.BEDROCK_API_ACCESS_SECRET}}" target="provider.bedrock.authentication.secretKey" />
+            <zeebe:input source="us.anthropic.claude-sonnet-4-20250514-v1:0" target="provider.bedrock.model.model" />
+            <zeebe:input source="=5000" target="provider.bedrock.model.parameters.maxTokens" />
+            <zeebe:input source="=0.1" target="provider.bedrock.model.parameters.temperature" />
+            <zeebe:input source="=&#34;You are a clinical case summariser for a prior authorisation system. Create a concise structured summary.&#34;" target="data.systemPrompt.prompt" />
+            <zeebe:input source="=&#34;Create a clinical case summary for prior auth review:\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nDiagnosis: &#34; + diagnosis + &#34;\nCoverage: &#34; + coverageType + &#34;\nUrgency: &#34; + urgencyLevel + &#34;\nClinical Notes: &#34; + clinicalNotes + &#34;\n\nProvide: clinical justification assessment, completeness of documentation, recommendation (approve/escalate/reject) with reason.&#34;" target="data.userPrompt.prompt" />
+            <zeebe:input source="=agent.context" target="data.context" />
+            <zeebe:input source="in-process" target="data.memory.storage.type" />
+            <zeebe:input source="=20" target="data.memory.contextWindowSize" />
+            <zeebe:input source="=5" target="data.limits.maxModelCalls" />
+            <zeebe:input source="text" target="data.response.format.type" />
+            <zeebe:input source="=false" target="data.response.format.parseJson" />
+            <zeebe:input source="=false" target="data.response.includeAssistantMessage" />
+          </zeebe:ioMapping>
+          <zeebe:taskHeaders>
+            <zeebe:header key="elementTemplateVersion" value="5" />
+            <zeebe:header key="elementTemplateId" value="io.camunda.connectors.agenticai.aiagent.v1" />
+            <zeebe:header key="resultVariable" value="agent" />
+            <zeebe:header key="resultExpression" value="={&quot;toolCallResult&quot;: responseText, &quot;caseSummary&quot;: responseText}" />
+            <zeebe:header key="retryBackoff" value="PT0S" />
+          </zeebe:taskHeaders>
+        </bpmn:extensionElements>
+      </bpmn:serviceTask>
+
+    </bpmn:adHocSubProcess>
+
+    <bpmn:businessRuleTask id="Task_DMN" name="Apply Clinical Criteria">
+      <bpmn:extensionElements>
+        <zeebe:calledDecision decisionId="prior-auth-clinical-criteria" resultVariable="authDecision" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=diagnosis" target="diagnosis" />
+          <zeebe:input source="=procedureCode" target="procedureCode" />
+          <zeebe:input source="=coverageType" target="coverageType" />
+          <zeebe:input source="=urgencyLevel" target="urgencyLevel" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToDMN</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToGateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Decision" name="Authorisation Decision">
+      <bpmn:incoming>Flow_ToGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_AutoApprove</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Escalate</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_NotifyApproved" name="Notify GP — Approved">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:email:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="simple" target="authentication.type" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_USER}}" target="authentication.username" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_PASSWORD}}" target="authentication.password" />
+          <zeebe:input source="smtp" target="protocol" />
+          <zeebe:input source="{{secrets.OUTBOUND_MAIL_SERVER}}" target="data.smtpConfig.smtpHost" />
+          <zeebe:input source="=465" target="data.smtpConfig.smtpPort" />
+          <zeebe:input source="SSL" target="data.smtpConfig.smtpCryptographicProtocol" />
+          <zeebe:input source="sendEmailSmtp" target="data.smtpActionDiscriminator" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_ADDRESS}}" target="data.smtpAction.from" />
+          <zeebe:input source="=gpEmail" target="data.smtpAction.to" />
+          <zeebe:input source="=&#34;Prior Authorisation APPROVED — &#34; + patientName + &#34; — &#34; + procedureRequested" target="data.smtpAction.subject" />
+          <zeebe:input source="PLAIN" target="data.smtpAction.contentType" />
+          <zeebe:input source="=&#34;Dear Dr &#34; + gpName + &#34;,\n\nThe prior authorisation request has been APPROVED.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nDiagnosis: &#34; + diagnosis + &#34;\nDecision: Auto-approved based on clinical criteria\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;" target="data.smtpAction.body" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="notifyResult" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_AutoApprove</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndApproved</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="Task_ClinicalOverride" name="Clinical Override Review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:formDefinition formId="prior-auth-clinical-override-form" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=caseSummary" target="caseSummary" />
+          <zeebe:input source="=patientName" target="patientName" />
+          <zeebe:input source="=procedureRequested" target="procedureRequested" />
+          <zeebe:input source="=diagnosis" target="diagnosis" />
+          <zeebe:input source="=authDecision.reason" target="escalationReason" />
+          <zeebe:input source="=coverageType" target="coverageType" />
+          <zeebe:input source="=urgencyLevel" target="urgencyLevel" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Escalate</bpmn:incoming>
+      <bpmn:outgoing>Flow_AfterOverride</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_Override" name="Override Decision">
+      <bpmn:incoming>Flow_AfterOverride</bpmn:incoming>
+      <bpmn:outgoing>Flow_OverrideApprove</bpmn:outgoing>
+      <bpmn:outgoing>Flow_OverrideReject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_NotifyRejected" name="Notify GP — Rejected">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:email:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="simple" target="authentication.type" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_USER}}" target="authentication.username" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_PASSWORD}}" target="authentication.password" />
+          <zeebe:input source="smtp" target="protocol" />
+          <zeebe:input source="{{secrets.OUTBOUND_MAIL_SERVER}}" target="data.smtpConfig.smtpHost" />
+          <zeebe:input source="=465" target="data.smtpConfig.smtpPort" />
+          <zeebe:input source="SSL" target="data.smtpConfig.smtpCryptographicProtocol" />
+          <zeebe:input source="sendEmailSmtp" target="data.smtpActionDiscriminator" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_ADDRESS}}" target="data.smtpAction.from" />
+          <zeebe:input source="=gpEmail" target="data.smtpAction.to" />
+          <zeebe:input source="=&#34;Prior Authorisation NOT APPROVED — &#34; + patientName + &#34; — &#34; + procedureRequested" target="data.smtpAction.subject" />
+          <zeebe:input source="PLAIN" target="data.smtpAction.contentType" />
+          <zeebe:input source="=&#34;Dear Dr &#34; + gpName + &#34;,\n\nThe prior authorisation request has NOT been approved.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nReason: &#34; + authDecision.reason + &#34;\n\nPlease submit additional documentation if required.\n\nPrior Authorisation Processing&#34;" target="data.smtpAction.body" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="notifyResult" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Reject</bpmn:incoming>
+      <bpmn:incoming>Flow_OverrideReject</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndRejected</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_NotifyOverrideApproved" name="Notify GP — Clinician Approved">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:email:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="simple" target="authentication.type" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_USER}}" target="authentication.username" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_PASSWORD}}" target="authentication.password" />
+          <zeebe:input source="smtp" target="protocol" />
+          <zeebe:input source="{{secrets.OUTBOUND_MAIL_SERVER}}" target="data.smtpConfig.smtpHost" />
+          <zeebe:input source="=465" target="data.smtpConfig.smtpPort" />
+          <zeebe:input source="SSL" target="data.smtpConfig.smtpCryptographicProtocol" />
+          <zeebe:input source="sendEmailSmtp" target="data.smtpActionDiscriminator" />
+          <zeebe:input source="{{secrets.INBOUND_MAIL_ADDRESS}}" target="data.smtpAction.from" />
+          <zeebe:input source="=gpEmail" target="data.smtpAction.to" />
+          <zeebe:input source="=&#34;Prior Authorisation APPROVED (Clinical Review) — &#34; + patientName + &#34; — &#34; + procedureRequested" target="data.smtpAction.subject" />
+          <zeebe:input source="PLAIN" target="data.smtpAction.contentType" />
+          <zeebe:input source="=&#34;Dear Dr &#34; + gpName + &#34;,\n\nFollowing clinical review, the prior authorisation has been APPROVED.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nReviewer notes: &#34; + reviewerNotes + &#34;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;" target="data.smtpAction.body" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="notifyResult" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_OverrideApprove</bpmn:incoming>
+      <bpmn:outgoing>Flow_EndOverrideApproved</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_Approved" name="Authorisation Approved">
+      <bpmn:incoming>Flow_EndApproved</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_Rejected" name="Authorisation Rejected">
+      <bpmn:incoming>Flow_EndRejected</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="EndEvent_OverrideApproved" name="Approved — Clinical Override">
+      <bpmn:incoming>Flow_EndOverrideApproved</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_ToAgent" sourceRef="StartEvent_1" targetRef="Activity_Agent" />
+    <bpmn:sequenceFlow id="Flow_ToDMN" sourceRef="Activity_Agent" targetRef="Task_DMN" />
+    <bpmn:sequenceFlow id="Flow_ToGateway" sourceRef="Task_DMN" targetRef="Gateway_Decision" />
+    <bpmn:sequenceFlow id="Flow_AutoApprove" name="Auto Approve" sourceRef="Gateway_Decision" targetRef="Task_NotifyApproved">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "approve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Escalate" name="Escalate to Clinical Review" sourceRef="Gateway_Decision" targetRef="Task_ClinicalOverride">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "escalate"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Reject" name="Reject" sourceRef="Gateway_Decision" targetRef="Task_NotifyRejected">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "reject"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_AfterOverride" sourceRef="Task_ClinicalOverride" targetRef="Gateway_Override" />
+    <bpmn:sequenceFlow id="Flow_OverrideApprove" name="Approve" sourceRef="Gateway_Override" targetRef="Task_NotifyOverrideApproved">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=overrideDecision = "approve"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_OverrideReject" name="Reject" sourceRef="Gateway_Override" targetRef="Task_NotifyRejected">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=overrideDecision = "reject"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_EndApproved" sourceRef="Task_NotifyApproved" targetRef="EndEvent_Approved" />
+    <bpmn:sequenceFlow id="Flow_EndRejected" sourceRef="Task_NotifyRejected" targetRef="EndEvent_Rejected" />
+    <bpmn:sequenceFlow id="Flow_EndOverrideApproved" sourceRef="Task_NotifyOverrideApproved" targetRef="EndEvent_OverrideApproved" />
+
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="prior-auth-process">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1"><dc:Bounds x="152" y="242" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="126" y="285" width="89" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Agent_di" bpmnElement="Activity_Agent" isExpanded="true"><dc:Bounds x="250" y="120" width="400" height="280" /><bpmndi:BPMNLabel /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SummariseCase_di" bpmnElement="Task_SummariseCase"><dc:Bounds x="340" y="200" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DMN_di" bpmnElement="Task_DMN"><dc:Bounds x="710" y="220" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true"><dc:Bounds x="865" y="235" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyApproved_di" bpmnElement="Task_NotifyApproved"><dc:Bounds x="970" y="140" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ClinicalOverride_di" bpmnElement="Task_ClinicalOverride"><dc:Bounds x="970" y="220" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyRejected_di" bpmnElement="Task_NotifyRejected"><dc:Bounds x="970" y="340" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Override_di" bpmnElement="Gateway_Override" isMarkerVisible="true"><dc:Bounds x="1125" y="235" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyOverrideApproved_di" bpmnElement="Task_NotifyOverrideApproved"><dc:Bounds x="1230" y="220" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved"><dc:Bounds x="1122" y="162" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1098" y="205" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected"><dc:Bounds x="1122" y="362" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1098" y="405" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_OverrideApproved_di" bpmnElement="EndEvent_OverrideApproved"><dc:Bounds x="1392" y="242" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1368" y="285" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToAgent_di" bpmnElement="Flow_ToAgent"><di:waypoint x="188" y="260" /><di:waypoint x="250" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToDMN_di" bpmnElement="Flow_ToDMN"><di:waypoint x="650" y="260" /><di:waypoint x="710" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToGateway_di" bpmnElement="Flow_ToGateway"><di:waypoint x="810" y="260" /><di:waypoint x="865" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AutoApprove_di" bpmnElement="Flow_AutoApprove"><di:waypoint x="890" y="235" /><di:waypoint x="890" y="180" /><di:waypoint x="970" y="180" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Escalate_di" bpmnElement="Flow_Escalate"><di:waypoint x="915" y="260" /><di:waypoint x="970" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Reject_di" bpmnElement="Flow_Reject"><di:waypoint x="890" y="285" /><di:waypoint x="890" y="380" /><di:waypoint x="970" y="380" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AfterOverride_di" bpmnElement="Flow_AfterOverride"><di:waypoint x="1070" y="260" /><di:waypoint x="1125" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OverrideApprove_di" bpmnElement="Flow_OverrideApprove"><di:waypoint x="1175" y="260" /><di:waypoint x="1230" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OverrideReject_di" bpmnElement="Flow_OverrideReject"><di:waypoint x="1150" y="285" /><di:waypoint x="1150" y="380" /><di:waypoint x="1122" y="380" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndApproved_di" bpmnElement="Flow_EndApproved"><di:waypoint x="1070" y="180" /><di:waypoint x="1122" y="180" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndRejected_di" bpmnElement="Flow_EndRejected"><di:waypoint x="1070" y="380" /><di:waypoint x="1122" y="380" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndOverrideApproved_di" bpmnElement="Flow_EndOverrideApproved"><di:waypoint x="1330" y="260" /><di:waypoint x="1392" y="260" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
