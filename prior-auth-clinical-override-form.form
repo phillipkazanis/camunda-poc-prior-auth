@@ -11,7 +11,10 @@
     {
       "text": "### Clinical Override Review\nThis request has been escalated for clinical review. Please review the case summary below and make a decision.",
       "type": "text",
-      "layout": { "row": "Row_header", "columns": null },
+      "layout": {
+        "row": "Row_header",
+        "columns": null
+      },
       "id": "Field_header"
     },
     {
@@ -20,7 +23,10 @@
         {
           "label": "Patient Name",
           "type": "textfield",
-          "layout": { "row": "Row_1", "columns": null },
+          "layout": {
+            "row": "Row_1",
+            "columns": null
+          },
           "id": "Field_patientName",
           "key": "patientName",
           "readonly": true
@@ -28,7 +34,10 @@
         {
           "label": "Procedure Requested",
           "type": "textfield",
-          "layout": { "row": "Row_1", "columns": null },
+          "layout": {
+            "row": "Row_1",
+            "columns": null
+          },
           "id": "Field_procedure",
           "key": "procedureRequested",
           "readonly": true
@@ -36,7 +45,10 @@
         {
           "label": "Diagnosis",
           "type": "textfield",
-          "layout": { "row": "Row_2", "columns": null },
+          "layout": {
+            "row": "Row_2",
+            "columns": null
+          },
           "id": "Field_diagnosis",
           "key": "diagnosis",
           "readonly": true
@@ -44,7 +56,10 @@
         {
           "label": "Coverage Type",
           "type": "textfield",
-          "layout": { "row": "Row_2", "columns": null },
+          "layout": {
+            "row": "Row_2",
+            "columns": null
+          },
           "id": "Field_coverage",
           "key": "coverageType",
           "readonly": true
@@ -52,7 +67,10 @@
         {
           "label": "Urgency Level",
           "type": "textfield",
-          "layout": { "row": "Row_3", "columns": null },
+          "layout": {
+            "row": "Row_3",
+            "columns": null
+          },
           "id": "Field_urgency",
           "key": "urgencyLevel",
           "readonly": true
@@ -60,7 +78,10 @@
         {
           "label": "Escalation Reason",
           "type": "textfield",
-          "layout": { "row": "Row_3", "columns": null },
+          "layout": {
+            "row": "Row_3",
+            "columns": null
+          },
           "id": "Field_reason",
           "key": "escalationReason",
           "readonly": true
@@ -68,7 +89,10 @@
         {
           "label": "AI Agent Case Summary",
           "type": "textarea",
-          "layout": { "row": "Row_4", "columns": null },
+          "layout": {
+            "row": "Row_4",
+            "columns": null
+          },
           "id": "Field_caseSummary",
           "key": "caseSummary",
           "readonly": true
@@ -76,7 +100,10 @@
       ],
       "showOutline": true,
       "type": "group",
-      "layout": { "row": "Row_group1", "columns": null },
+      "layout": {
+        "row": "Row_group1",
+        "columns": null
+      },
       "id": "Group_case"
     },
     {
@@ -85,27 +112,46 @@
         {
           "label": "Decision",
           "type": "select",
-          "layout": { "row": "Row_5", "columns": null },
+          "layout": {
+            "row": "Row_5",
+            "columns": null
+          },
           "id": "Field_decision",
           "key": "overrideDecision",
           "values": [
-            { "label": "✅ Approve — Clinical criteria met", "value": "approve" },
-            { "label": "❌ Reject — Clinical criteria not met", "value": "reject" }
+            {
+              "label": "✅ Approve — Clinical criteria met",
+              "value": "approve"
+            },
+            {
+              "label": "❌ Reject — Clinical criteria not met",
+              "value": "reject"
+            }
           ],
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Reviewer Notes",
           "type": "textarea",
-          "layout": { "row": "Row_6", "columns": null },
+          "layout": {
+            "row": "Row_6",
+            "columns": null
+          },
           "id": "Field_notes",
           "key": "reviewerNotes",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         }
       ],
       "showOutline": true,
       "type": "group",
-      "layout": { "row": "Row_group2", "columns": null },
+      "layout": {
+        "row": "Row_group2",
+        "columns": null
+      },
       "id": "Group_decision"
     }
   ],

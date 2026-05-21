@@ -11,7 +11,10 @@
     {
       "text": "### Prior Authorisation Request",
       "type": "text",
-      "layout": { "row": "Row_header", "columns": null },
+      "layout": {
+        "row": "Row_header",
+        "columns": null
+      },
       "id": "Field_header"
     },
     {
@@ -20,25 +23,38 @@
         {
           "label": "Patient Name",
           "type": "textfield",
-          "layout": { "row": "Row_1", "columns": null },
+          "layout": {
+            "row": "Row_1",
+            "columns": null
+          },
           "id": "Field_patientName",
           "key": "patientName",
           "defaultValue": "Sarah Mitchell",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Patient ID",
           "type": "textfield",
-          "layout": { "row": "Row_1", "columns": null },
+          "layout": {
+            "row": "Row_1",
+            "columns": null
+          },
           "id": "Field_patientId",
           "key": "patientId",
           "defaultValue": "PAT-2026-00847",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Date of Birth",
           "type": "textfield",
-          "layout": { "row": "Row_2", "columns": null },
+          "layout": {
+            "row": "Row_2",
+            "columns": null
+          },
           "id": "Field_dob",
           "key": "dateOfBirth",
           "defaultValue": "15/03/1968"
@@ -46,7 +62,10 @@
         {
           "label": "Medicare Number",
           "type": "textfield",
-          "layout": { "row": "Row_2", "columns": null },
+          "layout": {
+            "row": "Row_2",
+            "columns": null
+          },
           "id": "Field_medicare",
           "key": "medicareNumber",
           "defaultValue": "2345 67890 1"
@@ -54,7 +73,10 @@
       ],
       "showOutline": true,
       "type": "group",
-      "layout": { "row": "Row_group1", "columns": null },
+      "layout": {
+        "row": "Row_group1",
+        "columns": null
+      },
       "id": "Group_patient"
     },
     {
@@ -63,25 +85,38 @@
         {
           "label": "GP Name",
           "type": "textfield",
-          "layout": { "row": "Row_3", "columns": null },
+          "layout": {
+            "row": "Row_3",
+            "columns": null
+          },
           "id": "Field_gpName",
           "key": "gpName",
           "defaultValue": "Dr James Thompson",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "GP Email",
           "type": "textfield",
-          "layout": { "row": "Row_3", "columns": null },
+          "layout": {
+            "row": "Row_3",
+            "columns": null
+          },
           "id": "Field_gpEmail",
           "key": "gpEmail",
           "defaultValue": "phillip.kazanis@camunda.com",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Practice Name",
           "type": "textfield",
-          "layout": { "row": "Row_4", "columns": null },
+          "layout": {
+            "row": "Row_4",
+            "columns": null
+          },
           "id": "Field_practice",
           "key": "practiceName",
           "defaultValue": "Sydney Central Medical Centre"
@@ -89,7 +124,10 @@
       ],
       "showOutline": true,
       "type": "group",
-      "layout": { "row": "Row_group2", "columns": null },
+      "layout": {
+        "row": "Row_group2",
+        "columns": null
+      },
       "id": "Group_gp"
     },
     {
@@ -98,54 +136,99 @@
         {
           "label": "Diagnosis",
           "type": "textfield",
-          "layout": { "row": "Row_5", "columns": null },
+          "layout": {
+            "row": "Row_5",
+            "columns": null
+          },
           "id": "Field_diagnosis",
           "key": "diagnosis",
           "defaultValue": "Lumbar disc herniation with radiculopathy",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Procedure Requested",
           "type": "textfield",
-          "layout": { "row": "Row_5", "columns": null },
+          "layout": {
+            "row": "Row_5",
+            "columns": null
+          },
           "id": "Field_procedure",
           "key": "procedureRequested",
           "defaultValue": "MRI Lumbar Spine",
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Procedure Code",
           "type": "select",
-          "layout": { "row": "Row_6", "columns": null },
+          "layout": {
+            "row": "Row_6",
+            "columns": null
+          },
           "id": "Field_procedureCode",
           "key": "procedureCode",
           "defaultValue": "MRI-LUMBAR",
           "values": [
-            { "label": "MRI — Lumbar Spine", "value": "MRI-LUMBAR" },
-            { "label": "MRI — Brain", "value": "MRI-BRAIN" },
-            { "label": "CT Scan", "value": "CT-SCAN" },
-            { "label": "Specialist Consultation", "value": "SPEC-CONSULT" },
-            { "label": "Surgery", "value": "SURGERY" }
+            {
+              "label": "MRI — Lumbar Spine",
+              "value": "MRI-LUMBAR"
+            },
+            {
+              "label": "MRI — Brain",
+              "value": "MRI-BRAIN"
+            },
+            {
+              "label": "CT Scan",
+              "value": "CT-SCAN"
+            },
+            {
+              "label": "Specialist Consultation",
+              "value": "SPEC-CONSULT"
+            },
+            {
+              "label": "Surgery",
+              "value": "SURGERY"
+            }
           ],
-          "validate": { "required": true }
+          "validate": {
+            "required": true
+          }
         },
         {
           "label": "Urgency Level",
           "type": "select",
-          "layout": { "row": "Row_6", "columns": null },
+          "layout": {
+            "row": "Row_6",
+            "columns": null
+          },
           "id": "Field_urgency",
           "key": "urgencyLevel",
           "defaultValue": "routine",
           "values": [
-            { "label": "Routine", "value": "routine" },
-            { "label": "Semi-urgent", "value": "semi-urgent" },
-            { "label": "Urgent", "value": "urgent" }
+            {
+              "label": "Routine",
+              "value": "routine"
+            },
+            {
+              "label": "Semi-urgent",
+              "value": "semi-urgent"
+            },
+            {
+              "label": "Urgent",
+              "value": "urgent"
+            }
           ]
         },
         {
           "label": "Clinical Notes",
           "type": "textarea",
-          "layout": { "row": "Row_7", "columns": null },
+          "layout": {
+            "row": "Row_7",
+            "columns": null
+          },
           "id": "Field_clinicalNotes",
           "key": "clinicalNotes",
           "defaultValue": "Patient presents with 6 weeks of lower back pain radiating to left leg. Conservative management including physiotherapy and NSAIDs has not provided adequate relief. Neurological examination reveals reduced sensation L4/L5 dermatome. MRI required to assess for disc herniation and nerve root compression prior to specialist referral."
@@ -153,7 +236,10 @@
       ],
       "showOutline": true,
       "type": "group",
-      "layout": { "row": "Row_group3", "columns": null },
+      "layout": {
+        "row": "Row_group3",
+        "columns": null
+      },
       "id": "Group_clinical"
     },
     {
@@ -162,7 +248,10 @@
         {
           "label": "Clinical Referral Letter / Supporting Documents",
           "type": "filepicker",
-          "layout": { "row": "Row_8", "columns": null },
+          "layout": {
+            "row": "Row_8",
+            "columns": null
+          },
           "id": "Field_documents",
           "key": "clinicalDocuments",
           "multiple": true
@@ -170,7 +259,10 @@
       ],
       "showOutline": true,
       "type": "group",
-      "layout": { "row": "Row_group4", "columns": null },
+      "layout": {
+        "row": "Row_group4",
+        "columns": null
+      },
       "id": "Group_docs"
     }
   ],
