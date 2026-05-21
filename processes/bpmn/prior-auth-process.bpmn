@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="8cca9cf" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Web Modeler" exporterVersion="dc1bfde" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.9.0">
   <bpmn:process id="prior-auth-process" name="Prior Authorisation" isExecutable="true">
     <bpmn:startEvent id="StartEvent_1" name="Prior Auth Request Received">
       <bpmn:extensionElements>
         <zeebe:formDefinition formId="prior-auth-start-form" />
+        <zeebe:ioMapping>
+          <zeebe:output source="=&#34;Assessment complete.&#34;" target="caseSummary" />
+          <zeebe:output source="=&#34;Pending assessment.&#34;" target="reasoning" />
+        </zeebe:ioMapping>
       </bpmn:extensionElements>
       <bpmn:outgoing>Flow_ToAgent</bpmn:outgoing>
     </bpmn:startEvent>
@@ -98,7 +102,7 @@
             <zeebe:input source="in-process" target="data.memory.storage.type" />
             <zeebe:input source="=10" target="data.memory.contextWindowSize" />
             <zeebe:input source="=2" target="data.limits.maxModelCalls" />
-            <zeebe:input source="json" target="data.response.format.type" />
+            <zeebe:input source="text" target="data.response.format.type" />
             <zeebe:input source="=true" target="data.response.format.parseJson" />
             <zeebe:input source="=false" target="data.response.includeAssistantMessage" />
           </zeebe:ioMapping>
@@ -106,7 +110,7 @@
             <zeebe:header key="elementTemplateVersion" value="5" />
             <zeebe:header key="elementTemplateId" value="io.camunda.connectors.agenticai.aiagent.v1" />
             <zeebe:header key="resultVariable" value="finalDecision" />
-            <zeebe:header key="resultExpression" value="={toolCallResult: responseJson, recommendation: responseJson.recommendation, caseSummary: responseJson.caseSummary, reasoning: responseJson.reasoning}" />
+            <zeebe:header key="resultExpression" value="={&#10;  toolCallResult: response,&#10;  recommendation: string(json(response).recommendation),&#10;  caseSummary: string(json(response).caseSummary),&#10;  reasoning: string(json(response).reasoning)&#10;}" />
             <zeebe:header key="retryBackoff" value="PT0S" />
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
@@ -149,7 +153,7 @@
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
           <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
-          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[gpEmail],&#34;subject&#34;:&#34;Prior Authorisation APPROVED — &#34; + patientName,&#34;text&#34;:&#34;Dear &#34; + gpName + &#34;,\n\nApproved: &#34; + procedureRequested + &#34; for &#34; + patientName + &#34;.\n\n&#34; + caseSummary + &#34;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;}" target="body" />
+          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[&#34;camundashowcase+resend@gmail.com&#34;],&#34;subject&#34;:&#34;Prior Authorisation APPROVED — &#34; + patientName,&#34;text&#34;:&#34;Dear &#34; + gpName + &#34;,\n\nApproved: &#34; + procedureRequested + &#34; for &#34; + patientName + &#34;.\n\n&#34; + caseSummary + &#34;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;}" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -177,7 +181,7 @@
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
           <zeebe:input source="={&#34;Authorization&#34;: &#34;Bearer {{secrets.RESEND_API_KEY}}&#34;, &#34;Content-Type&#34;: &#34;application/json&#34;}" target="headers" />
-          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[gpEmail],&#34;subject&#34;:&#34;ACTION REQUIRED — Prior Auth Escalated: &#34; + patientName,&#34;text&#34;:&#34;A prior authorisation request requires clinical review.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nAgent reasoning: &#34; + reasoning + &#34;\n\nCase Summary:\n&#34; + caseSummary + &#34;\n\nPlease review in Tasklist.\n\nPrior Authorisation Processing&#34;}" target="body" />
+          <zeebe:input source="={&#34;from&#34;:&#34;Prior Auth &#60;onboarding@resend.dev&#62;&#34;,&#34;to&#34;:[&#34;camundashowcase+resend@gmail.com&#34;],&#34;subject&#34;:&#34;ACTION REQUIRED — Prior Auth Escalated: &#34; + patientName,&#34;text&#34;:&#34;A prior authorisation request requires clinical review.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\n\nCase Summary:\n&#34; + caseSummary + &#34;\n\nPrior Authorisation Processing&#34;}" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
