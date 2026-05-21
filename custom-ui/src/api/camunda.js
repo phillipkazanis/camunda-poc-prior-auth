@@ -29,9 +29,37 @@ async function camundaClient() {
   })
 }
 
+// ── Document Upload ────────────────────────────────────────────────────────
+
+export async function uploadDocument(file) {
+  const token = await getToken()
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('metadata', JSON.stringify({
+    contentType: file.type || 'application/pdf',
+    fileName: file.name,
+  }))
+  const res = await axios.post(
+    `https://${REGION}.zeebe.camunda.io/${CLUSTER_ID}/v1/documents`,
+    formData,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
+  return res.data
+}
+
+// ── Process Instances ──────────────────────────────────────────────────────
+
 export async function startProcess(processId, variables) {
   const client = await camundaClient()
-  const res = await client.post(`/v1/process-instances`, { bpmnProcessId: processId, variables })
+  const res = await client.post(`/v1/process-instances`, {
+    bpmnProcessId: processId,
+    variables,
+  })
   return res.data
 }
 
