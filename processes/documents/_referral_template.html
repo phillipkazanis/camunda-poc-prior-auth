@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Referral Letter</title>
+  <style>
+    @page { size: A4; margin: 18mm 20mm 18mm 20mm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Helvetica", "Arial", sans-serif;
+      font-size: 11pt;
+      color: #111;
+      line-height: 1.45;
+    }
+    .letterhead {
+      text-align: center;
+      border-bottom: 2px solid #1d4571;
+      padding-bottom: 10px;
+      margin-bottom: 18px;
+    }
+    .practice-name {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #1d4571;
+      letter-spacing: 0.3px;
+    }
+    .practice-tag {
+      font-size: 9pt;
+      color: #666;
+      margin-top: 2px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+    .practice-details {
+      font-size: 9.5pt;
+      color: #444;
+      margin-top: 6px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      margin: 14px 0 4px;
+      font-size: 10.5pt;
+    }
+    .recipient {
+      margin: 8px 0 14px;
+      font-size: 10.5pt;
+    }
+    .recipient .label { color: #666; font-size: 9pt; text-transform: uppercase; letter-spacing: 1px; }
+    .re-line {
+      border-top: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      padding: 8px 0;
+      margin: 10px 0 16px;
+      font-weight: 600;
+    }
+    h2 {
+      font-size: 11pt;
+      color: #1d4571;
+      margin: 14px 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      border-bottom: 1px dotted #bbb;
+      padding-bottom: 2px;
+    }
+    p { margin: 4px 0 8px; }
+    .field {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 8px;
+      margin: 2px 0;
+    }
+    .field .k { color: #555; }
+    .sign-off {
+      margin-top: 22px;
+    }
+    .sig {
+      font-family: "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive;
+      font-size: 22pt;
+      color: #1d4571;
+      margin: 4px 0;
+    }
+    .provider-block {
+      font-size: 10pt;
+      color: #333;
+      margin-top: 4px;
+    }
+    .footer {
+      position: fixed;
+      bottom: 6mm;
+      left: 20mm;
+      right: 20mm;
+      font-size: 8pt;
+      color: #888;
+      text-align: center;
+      border-top: 1px solid #ddd;
+      padding-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    <div class="practice-name">Brunswick Family Medical Centre</div>
+    <div class="practice-tag">Comprehensive General Practice · Accredited</div>
+    <div class="practice-details">
+      482 Sydney Road, Brunswick VIC 3056 &nbsp;·&nbsp; (03) 9387 4421 &nbsp;·&nbsp; Fax (03) 9387 4422<br>
+      ABN 76 412 884 901 &nbsp;·&nbsp; reception@brunswickfamilymed.com.au
+    </div>
+  </div>
+
+  <div class="meta-row">
+    <div><strong>Date:</strong> 14 May 2026</div>
+    <div><strong>Our ref:</strong> REF-2026-05-1147</div>
+  </div>
+
+  <div class="recipient">
+    <div class="label">Attention</div>
+    Prior Authorisation Team<br>
+    HealthFirst Australia — Diagnostic Imaging Authorisations<br>
+    GPO Box 7891, Melbourne VIC 3001<br>
+    Fax: 1300 884 552
+  </div>
+
+  <div class="re-line">
+    Re: <strong>Margaret CHEN</strong> &nbsp;·&nbsp; DOB 14 June 1968 (57F) &nbsp;·&nbsp;
+    Medicare 2950 41882 1 / 3 &nbsp;·&nbsp; HealthFirst Member No. HF-44782106
+  </div>
+
+  <h2>Procedure Requested</h2>
+  <div class="field"><div class="k">Procedure</div><div>MRI Lumbar Spine — Non-contrast</div></div>
+  <div class="field"><div class="k">Procedure code</div><div>MRI-LUMBAR (MBS item 63151)</div></div>
+  <div class="field"><div class="k">Clinical urgency</div><div>Semi-urgent (within 14 days)</div></div>
+  <div class="field"><div class="k">Working diagnosis</div><div>Right L5/S1 radiculopathy on a background of chronic mechanical low back pain</div></div>
+
+  <h2>Presenting Complaint &amp; Duration</h2>
+  <p>
+    Mrs Chen presents with an <strong>8-week history</strong> of low back pain radiating into the
+    right buttock and posterior thigh, worsening over the last fortnight to include calf paraesthesia.
+    Onset was insidious, no specific inciting event. Pain is exacerbated by prolonged sitting and
+    forward flexion.
+  </p>
+  <div class="field"><div class="k">Duration of symptoms</div><div>8 weeks</div></div>
+  <div class="field"><div class="k">Current pain score</div><div>NPRS 7/10 (worst 9/10, best 4/10)</div></div>
+
+  <!-- PHYSIO_BLOCK -->
+
+  <h2>Examination Findings</h2>
+  <p>
+    Neurological examination performed on 12 May 2026:
+  </p>
+  <div class="field"><div class="k">Motor</div><div>Power 5/5 throughout lower limbs bilaterally, including EHL and tibialis anterior</div></div>
+  <div class="field"><div class="k">Sensation</div><div>Intact to light touch and pin-prick in L4, L5 and S1 dermatomes bilaterally</div></div>
+  <div class="field"><div class="k">Reflexes</div><div>Knee and ankle reflexes 2+ and symmetric</div></div>
+  <div class="field"><div class="k">Provocation</div><div>Straight-leg raise positive on the right at 45° reproducing radicular symptoms; negative on the left</div></div>
+
+  <h2>Red Flag Screening</h2>
+  <p>
+    No red flags identified. Specifically: no saddle anaesthesia, no bladder or bowel disturbance,
+    no fever, no weight loss, no history of malignancy, no recent trauma, no progressive neurological
+    deficit, no immunosuppression.
+  </p>
+
+  <h2>Reason for Imaging</h2>
+  <p>
+    Despite an appropriate trial of conservative management, the patient continues to experience
+    significant pain and radicular symptoms with functional impairment (off work for the past three weeks).
+    MRI is requested to characterise suspected lumbar disc pathology and inform the next step in
+    management, including consideration of specialist referral.
+  </p>
+
+  <div class="sign-off">
+    Kind regards,
+    <div class="sig">Anita Patel</div>
+    <div class="provider-block">
+      <strong>Dr Anita Patel</strong> MBBS, FRACGP<br>
+      Provider No. 250123BC &nbsp;·&nbsp; Prescriber No. 4451102<br>
+      Brunswick Family Medical Centre
+    </div>
+  </div>
+
+  <div class="footer">
+    This referral contains confidential health information. If you have received this in error,
+    please notify the sender immediately. &nbsp;·&nbsp; Brunswick Family Medical Centre
+  </div>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  xmlns:modeler="http://camunda.org/schema/modeler/1.0"
+                  id="Definitions_AnalyzeClinicalDocument"
+                  targetNamespace="http://camunda.org/schema/1.0/bpmn"
+                  exporter="Camunda Modeler"
+                  exporterVersion="5.30.0"
+                  modeler:executionPlatform="Camunda Cloud"
+                  modeler:executionPlatformVersion="8.7.0">
+  <bpmn:process id="analyze-clinical-document" name="Analyze Clinical Document" isExecutable="true">
+    <bpmn:documentation>Subprocess invoked as a tool by the Prior Authorisation AI agent.
+Performs IDP extraction on a referral letter PDF, returning a single `extraction` object
+whose field names align with `prior_auth_clinical_guidelines.required_clinical_history.field_id`
+so the agent can compare extracted fields against guideline requirements directly.</bpmn:documentation>
+
+    <bpmn:startEvent id="StartEvent_AnalyzeDoc" name="Document received">
+      <bpmn:outgoing>Flow_Start_to_Idp</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="Task_IdpExtract" name="Extract clinical fields (IDP)"
+        zeebe:modelerTemplate="idp-unstructured-extraction-connector-1a080f4b-c2a5-4fbe-ad49-893055ce060c"
+        zeebe:modelerTemplateVersion="1">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:idp-extraction-connector-template:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=clinicalDocument" target="input.document" />
+          <zeebe:input source="=[
+  {&quot;name&quot;:&quot;patientFullName&quot;,&quot;prompt&quot;:&quot;Extract the patient&apos;s full name as written on the referral (e.g. Margaret Chen). Do not include titles.&quot;},
+  {&quot;name&quot;:&quot;patientDob&quot;,&quot;prompt&quot;:&quot;Extract the patient&apos;s date of birth in ISO format (YYYY-MM-DD).&quot;},
+  {&quot;name&quot;:&quot;medicareNumber&quot;,&quot;prompt&quot;:&quot;Extract the patient&apos;s Medicare number including the IRN if present (e.g. 2950 41882 1 / 3). Return null if not present.&quot;},
+  {&quot;name&quot;:&quot;fundMemberNumber&quot;,&quot;prompt&quot;:&quot;Extract the patient&apos;s private health fund member number if present (e.g. HF-44782106). Return null if not present.&quot;},
+  {&quot;name&quot;:&quot;referringGpName&quot;,&quot;prompt&quot;:&quot;Extract the referring GP&apos;s full name including title and credentials.&quot;},
+  {&quot;name&quot;:&quot;referringGpProviderNumber&quot;,&quot;prompt&quot;:&quot;Extract the referring GP&apos;s Medicare provider number.&quot;},
+  {&quot;name&quot;:&quot;referringGpEmail&quot;,&quot;prompt&quot;:&quot;Extract the referring GP&apos;s or practice email address if present. Return null otherwise.&quot;},
+  {&quot;name&quot;:&quot;procedureRequested&quot;,&quot;prompt&quot;:&quot;Extract the imaging or procedure name being requested (e.g. MRI Lumbar Spine).&quot;},
+  {&quot;name&quot;:&quot;procedureCode&quot;,&quot;prompt&quot;:&quot;Extract the procedure code if explicitly stated. If only the procedure name is given, return the corresponding code from this mapping: MRI Lumbar Spine -&gt; MRI-LUMBAR, MRI Brain -&gt; MRI-BRAIN, Knee Arthroscopy -&gt; KNEE-ARTHROSCOPY. Return null if neither name nor code is identifiable.&quot;},
+  {&quot;name&quot;:&quot;clinicalUrgency&quot;,&quot;prompt&quot;:&quot;Extract the stated clinical urgency (routine, semi-urgent, or urgent).&quot;},
+  {&quot;name&quot;:&quot;workingDiagnosis&quot;,&quot;prompt&quot;:&quot;Extract the working diagnosis as stated by the referring GP.&quot;},
+  {&quot;name&quot;:&quot;durationOfSymptomsWeeks&quot;,&quot;prompt&quot;:&quot;Extract the duration of presenting symptoms expressed in weeks as an integer. If expressed in months, convert (1 month = 4 weeks). If not stated, return null.&quot;},
+  {&quot;name&quot;:&quot;physiotherapyHistory&quot;,&quot;prompt&quot;:&quot;Extract a full description of any physiotherapy or supervised conservative musculoskeletal treatment the patient has undergone, including duration in weeks, modalities (manual therapy, exercise prescription, dry needling, etc.), and outcomes. If the referral does NOT mention any physiotherapy or supervised conservative treatment at all, return null. Do not infer.&quot;},
+  {&quot;name&quot;:&quot;conservativeManagementHistory&quot;,&quot;prompt&quot;:&quot;Extract a description of any non-surgical conservative management trialled (medications, activity modification, injections, brace). If none documented, return null.&quot;},
+  {&quot;name&quot;:&quot;neurologicalExamination&quot;,&quot;prompt&quot;:&quot;Extract the documented neurological examination findings including motor, sensation, reflexes and provocation tests. If not documented, return null.&quot;},
+  {&quot;name&quot;:&quot;painScale&quot;,&quot;prompt&quot;:&quot;Extract the current pain score (e.g. NPRS 7/10 or VAS 70mm). Return verbatim. If not documented, return null.&quot;},
+  {&quot;name&quot;:&quot;redFlagScreening&quot;,&quot;prompt&quot;:&quot;Extract the explicit red flag screening summary, including positive and negative findings (cauda equina, malignancy, infection, fracture, progressive neurological deficit). If not documented, return null.&quot;},
+  {&quot;name&quot;:&quot;headachePatternDurationWeeks&quot;,&quot;prompt&quot;:&quot;Extract any headache pattern description and duration in weeks. If the referral is not headache-related, return null.&quot;},
+  {&quot;name&quot;:&quot;priorImaging&quot;,&quot;prompt&quot;:&quot;Extract any prior imaging (CT, MRI, X-ray) with dates and findings if mentioned. If none, return null.&quot;},
+  {&quot;name&quot;:&quot;imagingFindings&quot;,&quot;prompt&quot;:&quot;Extract any imaging report findings cited in the referral. If none, return null.&quot;},
+  {&quot;name&quot;:&quot;functionalAssessment&quot;,&quot;prompt&quot;:&quot;Extract any documented functional impact or validated functional score (KOOS, Oxford Knee Score, IKDC, ADL impact). If none, return null.&quot;},
+  {&quot;name&quot;:&quot;mechanicalSymptoms&quot;,&quot;prompt&quot;:&quot;Extract documented mechanical joint symptoms such as locking, catching, or true mechanical block to motion. If none, return null.&quot;}
+]" target="input.taxonomyItems" />
+          <zeebe:input source="={&quot;modelId&quot;:&quot;us.anthropic.claude-sonnet-4-20250514-v1:0&quot;}" target="input.converseData" />
+          <zeebe:input source="aws" target="baseRequest.type" />
+          <zeebe:input source="credentials" target="baseRequest.authentication.type" />
+          <zeebe:input source="{{secrets.IDP_AWS_ACCESSKEY}}" target="baseRequest.authentication.accessKey" />
+          <zeebe:input source="{{secrets.IDP_AWS_SECRETKEY}}" target="baseRequest.authentication.secretKey" />
+          <zeebe:input source="{{secrets.IDP_AWS_BUCKET_NAME}}" target="baseRequest.s3BucketName" />
+          <zeebe:input source="AWS_TEXTRACT" target="baseRequest.extractionEngineType" />
+          <zeebe:input source="{{secrets.IDP_AWS_REGION}}" target="baseRequest.configuration.region" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="elementTemplateVersion" value="1" />
+          <zeebe:header key="elementTemplateId" value="io.camunda.connector.IdpExtractionOutBoundTemplate.v1" />
+          <zeebe:header key="resultVariable" value="idpResult" />
+          <zeebe:header key="resultExpression" value="={extraction: extractedFields}" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Start_to_Idp</bpmn:incoming>
+      <bpmn:outgoing>Flow_Idp_to_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="EndEvent_AnalyzeDoc" name="Fields extracted">
+      <bpmn:incoming>Flow_Idp_to_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Start_to_Idp" sourceRef="StartEvent_AnalyzeDoc" targetRef="Task_IdpExtract" />
+    <bpmn:sequenceFlow id="Flow_Idp_to_End" sourceRef="Task_IdpExtract" targetRef="EndEvent_AnalyzeDoc" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="analyze-clinical-document">
+      <bpmndi:BPMNShape id="StartEvent_AnalyzeDoc_di" bpmnElement="StartEvent_AnalyzeDoc">
+        <dc:Bounds x="172" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="151" y="215" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_IdpExtract_di" bpmnElement="Task_IdpExtract">
+        <dc:Bounds x="270" y="150" width="120" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AnalyzeDoc_di" bpmnElement="EndEvent_AnalyzeDoc">
+        <dc:Bounds x="452" y="172" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="437" y="215" width="68" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_to_Idp_di" bpmnElement="Flow_Start_to_Idp">
+        <di:waypoint x="208" y="190" />
+        <di:waypoint x="270" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Idp_to_End_di" bpmnElement="Flow_Idp_to_End">
+        <di:waypoint x="390" y="190" />
+        <di:waypoint x="452" y="190" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
