@@ -1,4 +1,4 @@
-[
+module.exports = [
   {
     "procedure_code": "MRI-LUMBAR",
     "procedure_name": "MRI Lumbar Spine — Non-contrast",
