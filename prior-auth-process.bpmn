@@ -21,8 +21,8 @@
           <zeebe:input source="us.anthropic.claude-sonnet-4-20250514-v1:0" target="provider.bedrock.model.model" />
           <zeebe:input source="=10000" target="provider.bedrock.model.parameters.maxTokens" />
           <zeebe:input source="=0.1" target="provider.bedrock.model.parameters.temperature" />
-          <zeebe:input source="=&#34;You are a **PriorAuthEvaluationAgent** reviewing prior authorisation requests for medical procedures. You have access to tools to help you evaluate the clinical documentation and make a recommendation. Be systematic and thorough. Use the summarise tool to create a structured case summary.&#34;" target="data.systemPrompt.prompt" />
-          <zeebe:input source="=&#34;A prior authorisation request has been submitted. Patient: &#34; + patientName + &#34; | Procedure: &#34; + procedureRequested + &#34; | Diagnosis: &#34; + diagnosis + &#34; | Coverage: &#34; + coverageType + &#34; | Urgency: &#34; + urgencyLevel + &#34; | Clinical notes: &#34; + clinicalNotes + &#34;. Summarise the case and provide your assessment.&#34;" target="data.userPrompt.prompt" />
+          <zeebe:input source="=&#34;You are a **PriorAuthEvaluationAgent** reviewing prior authorisation requests for medical procedures. Use the summarise tool to create a structured case summary.&#34;" target="data.systemPrompt.prompt" />
+          <zeebe:input source="=&#34;Prior auth request: Patient: &#34; + patientName + &#34; | Procedure: &#34; + procedureRequested + &#34; | Diagnosis: &#34; + diagnosis + &#34; | Coverage: &#34; + coverageType + &#34; | Urgency: &#34; + urgencyLevel + &#34; | Clinical notes: &#34; + clinicalNotes + &#34;. Summarise the case.&#34;" target="data.userPrompt.prompt" />
           <zeebe:input target="agentContext" />
           <zeebe:input source="in-process" target="data.memory.storage.type" />
           <zeebe:input source="=20" target="data.memory.contextWindowSize" />
@@ -57,8 +57,8 @@
             <zeebe:input source="us.anthropic.claude-sonnet-4-20250514-v1:0" target="provider.bedrock.model.model" />
             <zeebe:input source="=5000" target="provider.bedrock.model.parameters.maxTokens" />
             <zeebe:input source="=0.1" target="provider.bedrock.model.parameters.temperature" />
-            <zeebe:input source="=&#34;You are a clinical case summariser for a prior authorisation system. Create a concise structured summary.&#34;" target="data.systemPrompt.prompt" />
-            <zeebe:input source="=&#34;Create a clinical case summary for prior auth review:\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nDiagnosis: &#34; + diagnosis + &#34;\nCoverage: &#34; + coverageType + &#34;\nUrgency: &#34; + urgencyLevel + &#34;\nClinical Notes: &#34; + clinicalNotes + &#34;\n\nProvide: clinical justification assessment, completeness of documentation, recommendation (approve/escalate/reject) with reason.&#34;" target="data.userPrompt.prompt" />
+            <zeebe:input source="=&#34;You are a clinical case summariser. Create a concise structured summary.&#34;" target="data.systemPrompt.prompt" />
+            <zeebe:input source="=&#34;Case summary for prior auth:\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nDiagnosis: &#34; + diagnosis + &#34;\nCoverage: &#34; + coverageType + &#34;\nUrgency: &#34; + urgencyLevel + &#34;\nNotes: &#34; + clinicalNotes + &#34;\n\nProvide: justification assessment, documentation completeness, recommendation with reason.&#34;" target="data.userPrompt.prompt" />
             <zeebe:input source="=agent.context" target="data.context" />
             <zeebe:input source="in-process" target="data.memory.storage.type" />
             <zeebe:input source="=20" target="data.memory.contextWindowSize" />
@@ -100,15 +100,15 @@
       <bpmn:outgoing>Flow_Reject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <!-- Notify GP — Auto Approved via Resend -->
     <bpmn:serviceTask id="Task_NotifyApproved" name="Notify GP — Approved">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
-          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;Prior Authorisation APPROVED — &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;Dear Dr &quot; + gpName + &quot;,\n\nThe prior authorisation request has been APPROVED.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nDiagnosis: &quot; + diagnosis + &quot;\nDecision: Auto-approved based on clinical criteria\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="Bearer {{secrets.RESEND_API_KEY}}" target="headers.Authorization" />
+          <zeebe:input source="application/json" target="headers.Content-Type" />
+          <zeebe:input source="=&#123;&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;Prior Authorisation APPROVED — &quot; + patientName,&quot;text&quot;:&quot;Dear Dr &quot; + gpName + &quot;,\n\nApproved: &quot; + procedureRequested + &quot; for &quot; + patientName + &quot;.\nDiagnosis: &quot; + diagnosis + &quot;\nDecision: Auto-approved on clinical criteria.\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -120,15 +120,15 @@
       <bpmn:outgoing>Flow_EndApproved</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <!-- Notify Reviewer — Escalated via Resend -->
     <bpmn:serviceTask id="Task_NotifyReviewer" name="Notify Clinical Reviewer">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
-          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;ACTION REQUIRED — Prior Auth Escalated: &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;A prior authorisation request requires your clinical review.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nDiagnosis: &quot; + diagnosis + &quot;\nEscalation reason: &quot; + authDecision.reason + &quot;\n\nCase Summary:\n&quot; + caseSummary + &quot;\n\nPlease review this case in Tasklist.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="Bearer {{secrets.RESEND_API_KEY}}" target="headers.Authorization" />
+          <zeebe:input source="application/json" target="headers.Content-Type" />
+          <zeebe:input source="=&#123;&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;ACTION REQUIRED — Prior Auth Escalated: &quot; + patientName,&quot;text&quot;:&quot;A prior authorisation request requires clinical review.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nEscalation reason: &quot; + authDecision.reason + &quot;\n\nCase Summary:\n&quot; + caseSummary + &quot;\n\nPlease review in Tasklist.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -164,15 +164,15 @@
       <bpmn:outgoing>Flow_OverrideReject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
-    <!-- Notify GP — Rejected via Resend -->
     <bpmn:serviceTask id="Task_NotifyRejected" name="Notify GP — Rejected">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
-          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;Prior Authorisation NOT APPROVED — &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;Dear Dr &quot; + gpName + &quot;,\n\nThe prior authorisation request has NOT been approved.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nReason: &quot; + authDecision.reason + &quot;\n\nPlease submit additional documentation if required.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="Bearer {{secrets.RESEND_API_KEY}}" target="headers.Authorization" />
+          <zeebe:input source="application/json" target="headers.Content-Type" />
+          <zeebe:input source="=&#123;&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;Prior Authorisation NOT APPROVED — &quot; + patientName,&quot;text&quot;:&quot;Dear Dr &quot; + gpName + &quot;,\n\nThe prior authorisation for &quot; + procedureRequested + &quot; has NOT been approved.\n\nReason: &quot; + authDecision.reason + &quot;\n\nPlease submit additional documentation if required.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -185,15 +185,15 @@
       <bpmn:outgoing>Flow_EndRejected</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <!-- Notify GP — Clinician Approved via Resend -->
     <bpmn:serviceTask id="Task_NotifyOverrideApproved" name="Notify GP — Clinician Approved">
       <bpmn:extensionElements>
         <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
           <zeebe:input source="POST" target="method" />
           <zeebe:input source="https://api.resend.com/emails" target="url" />
-          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
-          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;Prior Authorisation APPROVED (Clinical Review) — &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;Dear Dr &quot; + gpName + &quot;,\n\nFollowing clinical review, the prior authorisation has been APPROVED.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nReviewer notes: &quot; + reviewerNotes + &quot;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="Bearer {{secrets.RESEND_API_KEY}}" target="headers.Authorization" />
+          <zeebe:input source="application/json" target="headers.Content-Type" />
+          <zeebe:input source="=&#123;&quot;from&quot;:&quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;,&quot;to&quot;:[gpEmail],&quot;subject&quot;:&quot;Prior Authorisation APPROVED (Clinical Review) — &quot; + patientName,&quot;text&quot;:&quot;Dear Dr &quot; + gpName + &quot;,\n\nFollowing clinical review, &quot; + procedureRequested + &quot; for &quot; + patientName + &quot; has been APPROVED.\n\nReviewer notes: &quot; + reviewerNotes + &quot;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
           <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
@@ -221,7 +221,7 @@
     <bpmn:sequenceFlow id="Flow_AutoApprove" name="Auto Approve" sourceRef="Gateway_Decision" targetRef="Task_NotifyApproved">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "approve"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Escalate" name="Escalate to Clinical Review" sourceRef="Gateway_Decision" targetRef="Task_NotifyReviewer">
+    <bpmn:sequenceFlow id="Flow_Escalate" name="Escalate" sourceRef="Gateway_Decision" targetRef="Task_NotifyReviewer">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "escalate"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Reject" name="Reject" sourceRef="Gateway_Decision" targetRef="Task_NotifyRejected">
