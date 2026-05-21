@@ -100,23 +100,16 @@
       <bpmn:outgoing>Flow_Reject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
+    <!-- Notify GP — Auto Approved via Resend -->
     <bpmn:serviceTask id="Task_NotifyApproved" name="Notify GP — Approved">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="io.camunda:email:1" retries="3" />
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
-          <zeebe:input source="simple" target="authentication.type" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_USER}}" target="authentication.username" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_PASSWORD}}" target="authentication.password" />
-          <zeebe:input source="smtp" target="protocol" />
-          <zeebe:input source="{{secrets.OUTBOUND_MAIL_SERVER}}" target="data.smtpConfig.smtpHost" />
-          <zeebe:input source="=465" target="data.smtpConfig.smtpPort" />
-          <zeebe:input source="SSL" target="data.smtpConfig.smtpCryptographicProtocol" />
-          <zeebe:input source="sendEmailSmtp" target="data.smtpActionDiscriminator" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_ADDRESS}}" target="data.smtpAction.from" />
-          <zeebe:input source="=gpEmail" target="data.smtpAction.to" />
-          <zeebe:input source="=&#34;Prior Authorisation APPROVED — &#34; + patientName + &#34; — &#34; + procedureRequested" target="data.smtpAction.subject" />
-          <zeebe:input source="PLAIN" target="data.smtpAction.contentType" />
-          <zeebe:input source="=&#34;Dear Dr &#34; + gpName + &#34;,\n\nThe prior authorisation request has been APPROVED.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nDiagnosis: &#34; + diagnosis + &#34;\nDecision: Auto-approved based on clinical criteria\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;" target="data.smtpAction.body" />
+          <zeebe:input source="POST" target="method" />
+          <zeebe:input source="https://api.resend.com/emails" target="url" />
+          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
+          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;Prior Authorisation APPROVED — &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;Dear Dr &quot; + gpName + &quot;,\n\nThe prior authorisation request has been APPROVED.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nDiagnosis: &quot; + diagnosis + &quot;\nDecision: Auto-approved based on clinical criteria\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="notifyResult" />
@@ -125,6 +118,26 @@
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_AutoApprove</bpmn:incoming>
       <bpmn:outgoing>Flow_EndApproved</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <!-- Notify Reviewer — Escalated via Resend -->
+    <bpmn:serviceTask id="Task_NotifyReviewer" name="Notify Clinical Reviewer">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
+        <zeebe:ioMapping>
+          <zeebe:input source="POST" target="method" />
+          <zeebe:input source="https://api.resend.com/emails" target="url" />
+          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
+          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;ACTION REQUIRED — Prior Auth Escalated: &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;A prior authorisation request requires your clinical review.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nDiagnosis: &quot; + diagnosis + &quot;\nEscalation reason: &quot; + authDecision.reason + &quot;\n\nCase Summary:\n&quot; + caseSummary + &quot;\n\nPlease review this case in Tasklist.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
+        </zeebe:ioMapping>
+        <zeebe:taskHeaders>
+          <zeebe:header key="resultVariable" value="reviewerNotifyResult" />
+          <zeebe:header key="retryBackoff" value="PT0S" />
+        </zeebe:taskHeaders>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Escalate</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToOverride</bpmn:outgoing>
     </bpmn:serviceTask>
 
     <bpmn:userTask id="Task_ClinicalOverride" name="Clinical Override Review">
@@ -141,7 +154,7 @@
           <zeebe:input source="=urgencyLevel" target="urgencyLevel" />
         </zeebe:ioMapping>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_Escalate</bpmn:incoming>
+      <bpmn:incoming>Flow_ToOverride</bpmn:incoming>
       <bpmn:outgoing>Flow_AfterOverride</bpmn:outgoing>
     </bpmn:userTask>
 
@@ -151,23 +164,16 @@
       <bpmn:outgoing>Flow_OverrideReject</bpmn:outgoing>
     </bpmn:exclusiveGateway>
 
+    <!-- Notify GP — Rejected via Resend -->
     <bpmn:serviceTask id="Task_NotifyRejected" name="Notify GP — Rejected">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="io.camunda:email:1" retries="3" />
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
-          <zeebe:input source="simple" target="authentication.type" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_USER}}" target="authentication.username" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_PASSWORD}}" target="authentication.password" />
-          <zeebe:input source="smtp" target="protocol" />
-          <zeebe:input source="{{secrets.OUTBOUND_MAIL_SERVER}}" target="data.smtpConfig.smtpHost" />
-          <zeebe:input source="=465" target="data.smtpConfig.smtpPort" />
-          <zeebe:input source="SSL" target="data.smtpConfig.smtpCryptographicProtocol" />
-          <zeebe:input source="sendEmailSmtp" target="data.smtpActionDiscriminator" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_ADDRESS}}" target="data.smtpAction.from" />
-          <zeebe:input source="=gpEmail" target="data.smtpAction.to" />
-          <zeebe:input source="=&#34;Prior Authorisation NOT APPROVED — &#34; + patientName + &#34; — &#34; + procedureRequested" target="data.smtpAction.subject" />
-          <zeebe:input source="PLAIN" target="data.smtpAction.contentType" />
-          <zeebe:input source="=&#34;Dear Dr &#34; + gpName + &#34;,\n\nThe prior authorisation request has NOT been approved.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nReason: &#34; + authDecision.reason + &#34;\n\nPlease submit additional documentation if required.\n\nPrior Authorisation Processing&#34;" target="data.smtpAction.body" />
+          <zeebe:input source="POST" target="method" />
+          <zeebe:input source="https://api.resend.com/emails" target="url" />
+          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
+          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;Prior Authorisation NOT APPROVED — &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;Dear Dr &quot; + gpName + &quot;,\n\nThe prior authorisation request has NOT been approved.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nReason: &quot; + authDecision.reason + &quot;\n\nPlease submit additional documentation if required.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="notifyResult" />
@@ -179,23 +185,16 @@
       <bpmn:outgoing>Flow_EndRejected</bpmn:outgoing>
     </bpmn:serviceTask>
 
+    <!-- Notify GP — Clinician Approved via Resend -->
     <bpmn:serviceTask id="Task_NotifyOverrideApproved" name="Notify GP — Clinician Approved">
       <bpmn:extensionElements>
-        <zeebe:taskDefinition type="io.camunda:email:1" retries="3" />
+        <zeebe:taskDefinition type="io.camunda:http-json:1" retries="3" />
         <zeebe:ioMapping>
-          <zeebe:input source="simple" target="authentication.type" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_USER}}" target="authentication.username" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_PASSWORD}}" target="authentication.password" />
-          <zeebe:input source="smtp" target="protocol" />
-          <zeebe:input source="{{secrets.OUTBOUND_MAIL_SERVER}}" target="data.smtpConfig.smtpHost" />
-          <zeebe:input source="=465" target="data.smtpConfig.smtpPort" />
-          <zeebe:input source="SSL" target="data.smtpConfig.smtpCryptographicProtocol" />
-          <zeebe:input source="sendEmailSmtp" target="data.smtpActionDiscriminator" />
-          <zeebe:input source="{{secrets.INBOUND_MAIL_ADDRESS}}" target="data.smtpAction.from" />
-          <zeebe:input source="=gpEmail" target="data.smtpAction.to" />
-          <zeebe:input source="=&#34;Prior Authorisation APPROVED (Clinical Review) — &#34; + patientName + &#34; — &#34; + procedureRequested" target="data.smtpAction.subject" />
-          <zeebe:input source="PLAIN" target="data.smtpAction.contentType" />
-          <zeebe:input source="=&#34;Dear Dr &#34; + gpName + &#34;,\n\nFollowing clinical review, the prior authorisation has been APPROVED.\n\nPatient: &#34; + patientName + &#34;\nProcedure: &#34; + procedureRequested + &#34;\nReviewer notes: &#34; + reviewerNotes + &#34;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&#34;" target="data.smtpAction.body" />
+          <zeebe:input source="POST" target="method" />
+          <zeebe:input source="https://api.resend.com/emails" target="url" />
+          <zeebe:input source="=&#123;&quot;Authorization&quot;: &quot;Bearer &#34; + secrets.RESEND_API_KEY,&quot;Content-Type&quot;: &quot;application/json&quot;&#125;" target="headers" />
+          <zeebe:input source="=&#123;&quot;from&quot;: &quot;Prior Auth &lt;onboarding@resend.dev&gt;&quot;, &quot;to&quot;: [gpEmail], &quot;subject&quot;: &quot;Prior Authorisation APPROVED (Clinical Review) — &quot; + patientName + &quot; — &quot; + procedureRequested, &quot;text&quot;: &quot;Dear Dr &quot; + gpName + &quot;,\n\nFollowing clinical review, the prior authorisation has been APPROVED.\n\nPatient: &quot; + patientName + &quot;\nProcedure: &quot; + procedureRequested + &quot;\nReviewer notes: &quot; + reviewerNotes + &quot;\n\nThe patient may proceed.\n\nPrior Authorisation Processing&quot;&#125;" target="body" />
+          <zeebe:input source="=30" target="connectionTimeoutInSeconds" />
         </zeebe:ioMapping>
         <zeebe:taskHeaders>
           <zeebe:header key="resultVariable" value="notifyResult" />
@@ -222,12 +221,13 @@
     <bpmn:sequenceFlow id="Flow_AutoApprove" name="Auto Approve" sourceRef="Gateway_Decision" targetRef="Task_NotifyApproved">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "approve"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_Escalate" name="Escalate to Clinical Review" sourceRef="Gateway_Decision" targetRef="Task_ClinicalOverride">
+    <bpmn:sequenceFlow id="Flow_Escalate" name="Escalate to Clinical Review" sourceRef="Gateway_Decision" targetRef="Task_NotifyReviewer">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "escalate"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_Reject" name="Reject" sourceRef="Gateway_Decision" targetRef="Task_NotifyRejected">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=authDecision.decision = "reject"</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToOverride" sourceRef="Task_NotifyReviewer" targetRef="Task_ClinicalOverride" />
     <bpmn:sequenceFlow id="Flow_AfterOverride" sourceRef="Task_ClinicalOverride" targetRef="Gateway_Override" />
     <bpmn:sequenceFlow id="Flow_OverrideApprove" name="Approve" sourceRef="Gateway_Override" targetRef="Task_NotifyOverrideApproved">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=overrideDecision = "approve"</bpmn:conditionExpression>
@@ -243,31 +243,33 @@
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="prior-auth-process">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1"><dc:Bounds x="152" y="242" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="126" y="285" width="89" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_Agent_di" bpmnElement="Activity_Agent" isExpanded="true"><dc:Bounds x="250" y="120" width="400" height="280" /><bpmndi:BPMNLabel /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_SummariseCase_di" bpmnElement="Task_SummariseCase"><dc:Bounds x="340" y="200" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_DMN_di" bpmnElement="Task_DMN"><dc:Bounds x="710" y="220" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true"><dc:Bounds x="865" y="235" width="50" height="50" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyApproved_di" bpmnElement="Task_NotifyApproved"><dc:Bounds x="970" y="140" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_ClinicalOverride_di" bpmnElement="Task_ClinicalOverride"><dc:Bounds x="970" y="220" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyRejected_di" bpmnElement="Task_NotifyRejected"><dc:Bounds x="970" y="340" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_Override_di" bpmnElement="Gateway_Override" isMarkerVisible="true"><dc:Bounds x="1125" y="235" width="50" height="50" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_NotifyOverrideApproved_di" bpmnElement="Task_NotifyOverrideApproved"><dc:Bounds x="1230" y="220" width="100" height="80" /></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved"><dc:Bounds x="1122" y="162" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1098" y="205" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected"><dc:Bounds x="1122" y="362" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1098" y="405" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="EndEvent_OverrideApproved_di" bpmnElement="EndEvent_OverrideApproved"><dc:Bounds x="1392" y="242" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1368" y="285" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_ToAgent_di" bpmnElement="Flow_ToAgent"><di:waypoint x="188" y="260" /><di:waypoint x="250" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_ToDMN_di" bpmnElement="Flow_ToDMN"><di:waypoint x="650" y="260" /><di:waypoint x="710" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_ToGateway_di" bpmnElement="Flow_ToGateway"><di:waypoint x="810" y="260" /><di:waypoint x="865" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_AutoApprove_di" bpmnElement="Flow_AutoApprove"><di:waypoint x="890" y="235" /><di:waypoint x="890" y="180" /><di:waypoint x="970" y="180" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Escalate_di" bpmnElement="Flow_Escalate"><di:waypoint x="915" y="260" /><di:waypoint x="970" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Reject_di" bpmnElement="Flow_Reject"><di:waypoint x="890" y="285" /><di:waypoint x="890" y="380" /><di:waypoint x="970" y="380" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_AfterOverride_di" bpmnElement="Flow_AfterOverride"><di:waypoint x="1070" y="260" /><di:waypoint x="1125" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_OverrideApprove_di" bpmnElement="Flow_OverrideApprove"><di:waypoint x="1175" y="260" /><di:waypoint x="1230" y="260" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_OverrideReject_di" bpmnElement="Flow_OverrideReject"><di:waypoint x="1150" y="285" /><di:waypoint x="1150" y="380" /><di:waypoint x="1122" y="380" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_EndApproved_di" bpmnElement="Flow_EndApproved"><di:waypoint x="1070" y="180" /><di:waypoint x="1122" y="180" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_EndRejected_di" bpmnElement="Flow_EndRejected"><di:waypoint x="1070" y="380" /><di:waypoint x="1122" y="380" /></bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_EndOverrideApproved_di" bpmnElement="Flow_EndOverrideApproved"><di:waypoint x="1330" y="260" /><di:waypoint x="1392" y="260" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1"><dc:Bounds x="152" y="252" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="126" y="295" width="89" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_Agent_di" bpmnElement="Activity_Agent" isExpanded="true"><dc:Bounds x="250" y="130" width="400" height="280" /><bpmndi:BPMNLabel /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SummariseCase_di" bpmnElement="Task_SummariseCase"><dc:Bounds x="340" y="210" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_DMN_di" bpmnElement="Task_DMN"><dc:Bounds x="710" y="230" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Decision_di" bpmnElement="Gateway_Decision" isMarkerVisible="true"><dc:Bounds x="865" y="245" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyApproved_di" bpmnElement="Task_NotifyApproved"><dc:Bounds x="970" y="130" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyReviewer_di" bpmnElement="Task_NotifyReviewer"><dc:Bounds x="970" y="230" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ClinicalOverride_di" bpmnElement="Task_ClinicalOverride"><dc:Bounds x="1130" y="230" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyRejected_di" bpmnElement="Task_NotifyRejected"><dc:Bounds x="970" y="360" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Override_di" bpmnElement="Gateway_Override" isMarkerVisible="true"><dc:Bounds x="1295" y="245" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_NotifyOverrideApproved_di" bpmnElement="Task_NotifyOverrideApproved"><dc:Bounds x="1400" y="230" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Approved_di" bpmnElement="EndEvent_Approved"><dc:Bounds x="1142" y="152" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1118" y="195" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_Rejected_di" bpmnElement="EndEvent_Rejected"><dc:Bounds x="1142" y="382" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1118" y="425" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_OverrideApproved_di" bpmnElement="EndEvent_OverrideApproved"><dc:Bounds x="1562" y="252" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1538" y="295" width="84" height="27" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToAgent_di" bpmnElement="Flow_ToAgent"><di:waypoint x="188" y="270" /><di:waypoint x="250" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToDMN_di" bpmnElement="Flow_ToDMN"><di:waypoint x="650" y="270" /><di:waypoint x="710" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToGateway_di" bpmnElement="Flow_ToGateway"><di:waypoint x="810" y="270" /><di:waypoint x="865" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AutoApprove_di" bpmnElement="Flow_AutoApprove"><di:waypoint x="890" y="245" /><di:waypoint x="890" y="170" /><di:waypoint x="970" y="170" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Escalate_di" bpmnElement="Flow_Escalate"><di:waypoint x="915" y="270" /><di:waypoint x="970" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Reject_di" bpmnElement="Flow_Reject"><di:waypoint x="890" y="295" /><di:waypoint x="890" y="400" /><di:waypoint x="970" y="400" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToOverride_di" bpmnElement="Flow_ToOverride"><di:waypoint x="1070" y="270" /><di:waypoint x="1130" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AfterOverride_di" bpmnElement="Flow_AfterOverride"><di:waypoint x="1230" y="270" /><di:waypoint x="1295" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OverrideApprove_di" bpmnElement="Flow_OverrideApprove"><di:waypoint x="1345" y="270" /><di:waypoint x="1400" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OverrideReject_di" bpmnElement="Flow_OverrideReject"><di:waypoint x="1320" y="295" /><di:waypoint x="1320" y="400" /><di:waypoint x="1142" y="400" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndApproved_di" bpmnElement="Flow_EndApproved"><di:waypoint x="1070" y="170" /><di:waypoint x="1142" y="170" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndRejected_di" bpmnElement="Flow_EndRejected"><di:waypoint x="1070" y="400" /><di:waypoint x="1142" y="400" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EndOverrideApproved_di" bpmnElement="Flow_EndOverrideApproved"><di:waypoint x="1500" y="270" /><di:waypoint x="1562" y="270" /></bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>
