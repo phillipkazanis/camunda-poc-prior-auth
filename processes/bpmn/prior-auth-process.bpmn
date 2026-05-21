@@ -110,8 +110,9 @@
             <zeebe:header key="elementTemplateVersion" value="5" />
             <zeebe:header key="elementTemplateId" value="io.camunda.connectors.agenticai.aiagent.v1" />
             <zeebe:header key="resultVariable" value="finalDecision" />
-            <zeebe:header key="resultExpression" value="={&#10;  toolCallResult: response,&#10;  recommendation: string(json(response).recommendation),&#10;  caseSummary: string(json(response).caseSummary),&#10;  reasoning: string(json(response).reasoning)&#10;}" />
+            <zeebe:header key="resultExpression" value="={&#10;  toolCallResult: responseJson,&#10;  recommendation: responseJson.recommendation,&#10;  caseSummary: responseJson.caseSummary,&#10;  reasoning: responseJson.reasoning&#10;}" />
             <zeebe:header key="retryBackoff" value="PT0S" />
+            <zeebe:header />
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
       </bpmn:serviceTask>
