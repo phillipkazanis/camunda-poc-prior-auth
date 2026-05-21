@@ -72,14 +72,6 @@
         },
         {
           "label": "Health Cover Type",
-          "type": "select",
-          "layout": {
-            "row": "Row_3",
-            "columns": null
-          },
-          "id": "Field_coverageType",
-          "key": "coverageType",
-          "defaultValue": "comprehensive",
           "values": [
             {
               "label": "Basic",
@@ -98,6 +90,14 @@
               "value": "none"
             }
           ],
+          "type": "select",
+          "layout": {
+            "row": "Row_3",
+            "columns": null
+          },
+          "id": "Field_coverageType",
+          "key": "coverageType",
+          "defaultValue": "comprehensive",
           "validate": {
             "required": true
           }
@@ -137,7 +137,7 @@
           },
           "id": "Field_gpEmail",
           "key": "gpEmail",
-          "defaultValue": "phillip.kazanis@camunda.com",
+          "defaultValue": "camundashowcase+resend@gmail.com",
           "validate": {
             "required": true
           }
@@ -195,14 +195,6 @@
         },
         {
           "label": "Procedure Code",
-          "type": "select",
-          "layout": {
-            "row": "Row_7",
-            "columns": null
-          },
-          "id": "Field_procedureCode",
-          "key": "procedureCode",
-          "defaultValue": "MRI-LUMBAR",
           "values": [
             {
               "label": "MRI — Lumbar Spine",
@@ -225,20 +217,20 @@
               "value": "SURGERY"
             }
           ],
+          "type": "select",
+          "layout": {
+            "row": "Row_7",
+            "columns": null
+          },
+          "id": "Field_procedureCode",
+          "key": "procedureCode",
+          "defaultValue": "MRI-LUMBAR",
           "validate": {
             "required": true
           }
         },
         {
           "label": "Urgency Level",
-          "type": "select",
-          "layout": {
-            "row": "Row_7",
-            "columns": null
-          },
-          "id": "Field_urgency",
-          "key": "urgencyLevel",
-          "defaultValue": "routine",
           "values": [
             {
               "label": "Routine",
@@ -252,7 +244,15 @@
               "label": "Urgent",
               "value": "urgent"
             }
-          ]
+          ],
+          "type": "select",
+          "layout": {
+            "row": "Row_7",
+            "columns": null
+          },
+          "id": "Field_urgency",
+          "key": "urgencyLevel",
+          "defaultValue": "routine"
         },
         {
           "label": "Clinical Notes",
