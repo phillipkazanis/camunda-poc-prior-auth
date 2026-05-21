@@ -105,13 +105,15 @@
             <zeebe:input source="=true" target="data.response.format.parseJson" />
             <zeebe:input source="=false" target="data.response.includeAssistantMessage" />
           </zeebe:ioMapping>
+          <zeebe:ioMapping>
+            <zeebe:output source="=responseJson.recommendation" target="recommendation" />
+            <zeebe:output source="=responseJson.caseSummary" target="caseSummary" />
+            <zeebe:output source="=responseJson.reasoning" target="reasoning" />
+          </zeebe:ioMapping>
           <zeebe:taskHeaders>
             <zeebe:header key="elementTemplateVersion" value="5" />
             <zeebe:header key="elementTemplateId" value="io.camunda.connectors.agenticai.aiagent.v1" />
-            <zeebe:header key="resultVariable" value="finalDecision" />
-            <zeebe:header key="resultExpression" value="={&#10;  toolCallResult: responseJson,&#10;  recommendation: responseJson.recommendation,&#10;  caseSummary: responseJson.caseSummary,&#10;  reasoning: responseJson.reasoning&#10;}" />
             <zeebe:header key="retryBackoff" value="PT0S" />
-            <zeebe:header />
           </zeebe:taskHeaders>
         </bpmn:extensionElements>
       </bpmn:serviceTask>
